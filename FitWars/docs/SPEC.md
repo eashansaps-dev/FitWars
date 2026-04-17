@@ -44,20 +44,57 @@ Stats are derived entirely from real-world fitness activity, never from characte
 
 ## 5. Player Stats
 
-| Stat | Derived From |
-|------|-------------|
-| **Strength** | Strength workouts, calories burned |
-| **Stamina** | Cardio duration, active calories |
-| **Speed** | Steps, running distance |
-| **Level** | Aggregate XP across all stats |
+| Stat | Derived From | Character Archetype |
+|------|-------------|---------------------|
+| **Strength** | Strength workouts, core training, HIIT | The Tank |
+| **Stamina** | Cardio workouts, exercise minutes, cycling, swimming, yoga | The Endurance Fighter |
+| **Speed** | Steps, running workouts, running distance | The Speedster |
+| **Level** | Aggregate XP across all stats | — |
+
+No stat differences between male/female characters. Same workout = same XP regardless of character model.
+
+### HealthKit Workout Type Mapping
+
+| HealthKit Workout Type | Maps To |
+|---|---|
+| `.traditionalStrengthTraining` | Strength |
+| `.functionalStrengthTraining` | Strength |
+| `.coreTraining` | Strength |
+| `.highIntensityIntervalTraining` | Strength + Stamina (split) |
+| `.running` | Speed |
+| `.walking` | Speed |
+| `.cycling` | Stamina |
+| `.swimming` | Stamina |
+| `.yoga` | Stamina |
+| `.mixedCardio` | Stamina |
 
 ## 6. XP System
 
-| Activity | XP Reward |
-|----------|-----------|
-| 1,000 steps | +10 Speed XP |
-| 10 min workout | +15 Stamina XP |
-| 100 kcal active calories | +10 Strength XP |
+Workout type matters more than raw calories. A strength session gives Strength XP even if calorie burn is low. A 5k run gives Speed XP regardless of calorie count.
+
+### Strength XP
+| Source | XP |
+|--------|-----|
+| Per strength/core workout session | +20 |
+| Per 10 min of strength workout duration | +5 |
+| Per 100 kcal burned during strength workouts | +3 |
+
+### Stamina XP
+| Source | XP |
+|--------|-----|
+| Per cardio workout session (cycling, swimming, yoga, HIIT) | +5 |
+| Per 10 min of appleExerciseTime | +3 |
+| Per 100 active calories (general) | +2 |
+
+### Speed XP
+| Source | XP |
+|--------|-----|
+| Per running workout session | +10 |
+| Per 1,000 steps | +5 |
+| Per km of running distance | +3 |
+
+### HIIT Split
+HIIT workouts award XP to both Strength and Stamina (50/50 split on duration and calorie bonuses).
 
 **Daily caps per stat:** 100 XP (prevents abuse, encourages consistency)
 

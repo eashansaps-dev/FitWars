@@ -161,11 +161,33 @@ Battle resolution runs server-side to prevent client manipulation.
    - stepCount
    - activeEnergyBurned
    - appleExerciseTime
-3. Returns DailyActivity { steps, calories, workoutMinutes, date }
-4. StatsEngine computes XP:
-   - speedXP = min(steps / 1000 * 10, 100)
-   - staminaXP = min(workoutMinutes / 10 * 15, 100)
-   - strengthXP = min(calories / 100 * 10, 100)
+   - HKWorkout samples (with workoutActivityType)
+3. Returns DailyActivity {
+     steps, activeCalories, exerciseMinutes, date,
+     workouts: [{ type, duration, calories, distance }]
+   }
+4. StatsEngine computes XP by workout type:
+
+   Strength XP (from strength/core/HIIT workouts):
+     +20 per session
+     +5 per 10 min duration
+     +3 per 100 kcal
+     cap: 100/day
+
+   Stamina XP (from cardio workouts + general activity):
+     +5 per cardio session (cycling, swimming, yoga, HIIT)
+     +3 per 10 min appleExerciseTime
+     +2 per 100 active calories
+     cap: 100/day
+
+   Speed XP (from running + steps):
+     +10 per running session
+     +5 per 1,000 steps
+     +3 per km running distance
+     cap: 100/day
+
+   HIIT splits 50/50 between Strength and Stamina.
+
 5. Stats updated locally + synced to Firestore
 ```
 
