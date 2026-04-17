@@ -153,6 +153,24 @@ function resolveBattle(player1Stats, player2Stats):
 
 Battle resolution runs server-side to prevent client manipulation.
 
+### Post-Battle Insights (computed client-side from result)
+
+```swift
+struct BattleInsight {
+    let statDeltas: [StatType: Int]       // e.g. strength: -17, stamina: +17, speed: -22
+    let weakestStat: StatType             // your lowest stat
+    let biggestGap: StatType              // largest negative delta vs opponent
+    let suggestedWorkouts: [String]       // mapped from weakest/gap stats
+}
+
+// Workout suggestion mapping:
+// strength → ["Weight training", "Core workouts", "HIIT"]
+// stamina  → ["Cycling", "Swimming", "Yoga", "Longer cardio"]
+// speed    → ["Running", "Walking (8,000+ steps/day)"]
+```
+
+Insights are always shown — on wins (to highlight growth areas) and losses (to drive specific workouts).
+
 ## 6. HealthKit Data Flow
 
 ```

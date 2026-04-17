@@ -119,6 +119,20 @@ winner = player with higher score
 
 **Limits:** 3 battles per day (free), more via rewarded ads.
 
+### Post-Battle Insights
+
+Every battle result includes a personalized breakdown:
+
+1. **Stat Comparison** — side-by-side of your stats vs opponent's, with delta (+/-) per stat
+2. **Weakness Highlight** — identifies your weakest stat and the biggest gap vs opponent
+3. **Workout Suggestions** — maps each weak stat to specific real-world workouts:
+   - Low Strength → "Try: Weight training, Core workouts, HIIT"
+   - Low Stamina → "Try: Cycling, Swimming, Yoga, longer cardio sessions"
+   - Low Speed → "Try: Running, Walking (aim for 8,000+ steps/day)"
+4. **Win insights** — even on wins, highlight your weakest stat so there's always a next goal
+
+This turns every loss into a fitness plan and every win into motivation to stay balanced.
+
 ## 8. Social Features (MVP)
 
 - Friends list (add by username)
