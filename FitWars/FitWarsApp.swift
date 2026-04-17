@@ -11,7 +11,7 @@ struct FitWarsApp: App {
             if hasCompletedOnboarding {
                 MainTabView(engine: engine, healthKit: healthKit)
             } else {
-                CharacterSelectionView()
+                AvatarCustomizerView()
             }
         }
     }

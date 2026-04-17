@@ -59,3 +59,7 @@ struct CharacterSelectionView: View {
         .onTapGesture { selection = model }
     }
 }
+
+#Preview {
+    CharacterSelectionView()
+}

@@ -31,16 +31,28 @@ PulseCombat is an iOS game where real-world fitness activity powers an in-game f
 
 **Asset pipeline:** AI-generated base art → artist cleanup → sprite sheet export → SpriteKit atlas.
 
-## 4. Character Selection
+## 4. Avatar Customization
 
-At onboarding, users choose a character model:
+At onboarding, users build a custom fighter avatar:
 
-- **Male fighter** and **Female fighter** available at launch
-- Choice is purely cosmetic — zero stat differences
-- Users can change character model anytime in settings
-- Post-MVP: additional character models, skins, outfits as cosmetic unlocks/purchases
+**Body type:** Adult fighter proportions (Street Fighter / Mortal Kombat style). Not chibi, not cartoon.
 
-Stats are derived entirely from real-world fitness activity, never from character choice.
+**Customizable features:**
+- Fighter name (user-chosen)
+- Skin tone (color spectrum)
+- Face shape (oval, square, round, angular)
+- Eyes (multiple styles)
+- Hair style (short, long, mohawk, bald, braids, etc.)
+- Hair color (color spectrum)
+- Outfit (gi, tank top, hoodie, armor — unlockable)
+
+**Rendering:** Modular layered system — body parts are separate SwiftUI layers composited into a full character. Same system used in dashboard, battle, and profile.
+
+**Gender:** No gender selection. Avatar is fully customizable — users create whatever fighter they want.
+
+**Post-MVP:** Additional hairstyles, outfits, accessories as cosmetic unlocks/purchases.
+
+Stats are derived entirely from real-world fitness activity, never from avatar appearance.
 
 ## 5. Player Stats
 
@@ -102,20 +114,34 @@ HIIT workouts award XP to both Strength and Stamina (50/50 split on duration and
 
 ## 7. Battle System
 
-**Type:** Async, auto-resolved (MVP). SpriteKit animated playback (Phase 2).
+**Type:** Real-time 2D combat (Mortal Kombat / Street Fighter style). Side-view, on-screen controls.
 
-**Algorithm (v1):**
+**Controls:** Attack, Block, Dodge, Special Move (unlocked by fitness milestones)
+
+**How fitness stats affect combat:**
+- Strength → more damage per hit
+- Stamina → larger health pool, faster recovery
+- Speed → faster movement, quicker attack animations
+
+**Key principle:** Fitness stats give you an edge, but skill still matters. A Level 5 player with good timing can beat a Level 10 player who button-mashes.
+
+**MVP (current):** Auto-resolved battles with stat comparison (placeholder until SpriteKit combat is built).
+
+**Phase 2:** SpriteKit real-time combat with on-screen controls, local play vs bots.
+
+**Phase 3:** Real-time multiplayer via GameKit.
+
+**Algorithm (auto-resolve fallback):**
 ```
 score = (strength * 0.4) + (stamina * 0.3) + (speed * 0.3) + random(0..5)
 winner = player with higher score
 ```
 
-**Battle flow:**
+**Battle flow (MVP):**
 1. User taps "Fight" → matched with opponent (random or friend)
-2. Server resolves battle using both players' stats
-3. Result screen shows outcome with stat comparison
-4. Phase 2: SpriteKit replays the fight as an animated sequence
-5. Winner gets +25 XP bonus + rank points
+2. Auto-resolve using both players' stats
+3. Result screen shows outcome with stat comparison + workout suggestions
+4. Winner gets +25 XP bonus + rank points
 
 **Limits:** 3 battles per day (free), more via rewarded ads.
 

@@ -40,9 +40,7 @@ struct BattleView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: opp.character == .maleDefault ? "figure.martial.arts" : "figure.kickboxing")
-                .font(.system(size: 80))
-                .foregroundStyle(.red)
+            AvatarRenderer(config: opp.avatarConfig, size: 100)
 
             Text(opp.username)
                 .font(.title.bold())
@@ -100,10 +98,13 @@ struct BattleView: View {
 
     private func fight(_ opp: Opponent) {
         isFighting = true
-        // Small delay for dramatic effect
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             result = BattleEngine.resolve(player: playerStats, opponent: opp)
             isFighting = false
         }
     }
+}
+
+#Preview {
+    BattleView(playerStats: PlayerStats(strength: 30, stamina: 25, speed: 20, totalXP: 500))
 }

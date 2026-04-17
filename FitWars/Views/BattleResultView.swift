@@ -93,3 +93,35 @@ struct BattleResultView: View {
         }
     }
 }
+
+#Preview("Victory") {
+    BattleResultView(
+        result: BattleResult(
+            opponent: Opponent(id: "1", username: "IronMike",
+                             avatarConfig: AvatarConfig(name: "IronMike", skinTone: AvatarConfig.skinTones[3], faceShape: .square, eyeStyle: .fierce, hairStyle: .short, hairColor: AvatarConfig.hairColors[0], outfit: .tankTop),
+                             stats: PlayerStats(strength: 45, stamina: 30, speed: 25, totalXP: 800)),
+            playerScore: 42.3,
+            opponentScore: 38.7,
+            won: true,
+            insight: BattleInsight(strengthDelta: -15, staminaDelta: 10, speedDelta: 5,
+                                  weakestStat: "Strength", suggestions: ["Weight training", "Core workouts", "HIIT sessions"])
+        ),
+        onDismiss: {}
+    )
+}
+
+#Preview("Defeat") {
+    BattleResultView(
+        result: BattleResult(
+            opponent: Opponent(id: "2", username: "SwiftKat",
+                             avatarConfig: AvatarConfig(name: "SwiftKat", skinTone: AvatarConfig.skinTones[1], faceShape: .oval, eyeStyle: .normal, hairStyle: .ponytail, hairColor: AvatarConfig.hairColors[4], outfit: .gi),
+                             stats: PlayerStats(strength: 20, stamina: 35, speed: 50, totalXP: 900)),
+            playerScore: 28.1,
+            opponentScore: 35.9,
+            won: false,
+            insight: BattleInsight(strengthDelta: 10, staminaDelta: -10, speedDelta: -30,
+                                  weakestStat: "Speed", suggestions: ["Running", "Walking (aim for 8,000+ steps)", "Sprint intervals"])
+        ),
+        onDismiss: {}
+    )
+}

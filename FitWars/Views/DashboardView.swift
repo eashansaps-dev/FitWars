@@ -3,11 +3,7 @@ import SwiftUI
 struct DashboardView: View {
     @State private var healthKit = HealthKitManager()
     @State private var engine = StatsEngine()
-    @AppStorage("selectedCharacter") private var selectedCharacter = CharacterModel.maleDefault.rawValue
-
-    var character: CharacterModel {
-        CharacterModel(rawValue: selectedCharacter) ?? .maleDefault
-    }
+    @State private var avatar = AvatarConfig.load()
 
     var body: some View {
         NavigationStack {
@@ -33,9 +29,12 @@ struct DashboardView: View {
 
     private var characterCard: some View {
         VStack(spacing: 12) {
-            Image(systemName: character == .maleDefault ? "figure.martial.arts" : "figure.kickboxing")
-                .font(.system(size: 80))
-                .foregroundStyle(.orange)
+            AvatarRenderer(config: avatar, size: 100)
+
+            if !avatar.name.isEmpty {
+                Text(avatar.name)
+                    .font(.title3.bold())
+            }
 
             Text("Level \(engine.stats.level)")
                 .font(.title2.bold())
@@ -123,4 +122,8 @@ struct DashboardView: View {
         .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
         .foregroundStyle(color)
     }
+}
+
+#Preview {
+    DashboardView()
 }
