@@ -1,0 +1,78 @@
+import SwiftUI
+
+struct ProfileView: View {
+    let stats: PlayerStats
+    @AppStorage("selectedCharacter") private var selectedCharacter = CharacterModel.maleDefault.rawValue
+
+    var character: CharacterModel {
+        CharacterModel(rawValue: selectedCharacter) ?? .maleDefault
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Character") {
+                    Picker("Fighter", selection: $selectedCharacter) {
+                        ForEach(CharacterModel.allCases, id: \.rawValue) { model in
+                            Text(model.displayName).tag(model.rawValue)
+                        }
+                    }
+                }
+
+                Section("Stats") {
+                    statRow("Strength", value: stats.strength, icon: "flame.fill", color: .red)
+                    statRow("Stamina", value: stats.stamina, icon: "heart.fill", color: .green)
+                    statRow("Speed", value: stats.speed, icon: "bolt.fill", color: .blue)
+                }
+
+                Section("Progress") {
+                    HStack {
+                        Text("Level")
+                        Spacer()
+                        Text("\(stats.level)")
+                            .bold()
+                    }
+                    HStack {
+                        Text("Total XP")
+                        Spacer()
+                        Text("\(stats.totalXP)")
+                            .bold()
+                    }
+                    HStack {
+                        Text("XP to next level")
+                        Spacer()
+                        Text("\(stats.xpToNextLevel)")
+                            .bold()
+                    }
+                }
+
+                Section("About") {
+                    HStack {
+                        Text("App")
+                        Spacer()
+                        Text(AppConfig.appName)
+                            .foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        Text("1.0.0")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Profile")
+        }
+    }
+
+    private func statRow(_ label: String, value: Int, icon: String, color: Color) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+            Text(label)
+            Spacer()
+            Text("\(value)")
+                .bold()
+        }
+    }
+}

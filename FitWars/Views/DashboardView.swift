@@ -31,8 +31,6 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Character Card
-
     private var characterCard: some View {
         VStack(spacing: 12) {
             Image(systemName: character == .maleDefault ? "figure.martial.arts" : "figure.kickboxing")
@@ -50,8 +48,6 @@ struct DashboardView: View {
         .padding(.vertical, 24)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
-
-    // MARK: - Stats Grid
 
     private var statsGrid: some View {
         HStack(spacing: 12) {
@@ -76,8 +72,6 @@ struct DashboardView: View {
         .padding(.vertical, 16)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
-
-    // MARK: - Today's Progress
 
     private var todayProgress: some View {
         VStack(alignment: .leading, spacing: 12) {
