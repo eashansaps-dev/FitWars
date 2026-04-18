@@ -49,7 +49,18 @@ def process_cell(col, row, output_name):
     """Extract cell, remove bg, trim, save to 256x256 canvas."""
     x = col * CELL_W
     y = row * CELL_H
-    cell = img.crop((x, y, x + CELL_W, y + CELL_H)).copy()
+    
+    # Skip the top 25px and left 10px of each cell to avoid label text
+    # Labels like "FIGHT 1.1", "2.2", "3.3" etc sit in the top-left corner
+    label_top = 25
+    label_left = 10 if col > 0 else 80  # first column has longer labels
+    
+    cell = img.crop((
+        x + label_left, 
+        y + label_top, 
+        x + CELL_W, 
+        y + CELL_H
+    )).copy()
     
     cell = remove_background(cell)
     bbox = cell.getbbox()
