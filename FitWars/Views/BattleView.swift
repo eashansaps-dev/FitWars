@@ -2,12 +2,13 @@ import SwiftUI
 
 struct BattleView: View {
     let playerStats: PlayerStats
+    // Task 10.2: Inject FirestoreService from environment
+    @Environment(FirestoreService.self) private var firestoreService
     @State private var opponent: Opponent?
     @State private var result: BattleResult?
     @State private var isFighting = false
     @State private var showRealBattle = false
     @State private var selectedDifficulty: DifficultyLevel = .medium
-    private let api: APIService = MockAPIService()
 
     var body: some View {
         NavigationStack {
@@ -35,6 +36,9 @@ struct BattleView: View {
                             won: playerWon,
                             insight: result!.insight
                         )
+                        if let result {
+                            Task { await firestoreService.submitBattleResult(result) }
+                        }
                     }
                     .ignoresSafeArea()
                 } else if let opp = opponent {
@@ -129,7 +133,9 @@ struct BattleView: View {
     }
 
     private func findOpponent() async {
-        opponent = await api.fetchRandomOpponent()
+        // Task 10.1: Use FirestoreService instead of MockAPIService
+        // Task 10.3: Bot fallback is already implemented in FirestoreService
+        opponent = await firestoreService.fetchRandomOpponent()
     }
 
     private func quickFight(_ opp: Opponent) {
@@ -137,10 +143,12 @@ struct BattleView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             result = BattleEngine.resolve(player: playerStats, opponent: opp)
             isFighting = false
+            if let result {
+                Task { await firestoreService.submitBattleResult(result) }
+            }
         }
     }
 }
 
-#Preview {
-    BattleView(playerStats: PlayerStats(strength: 30, stamina: 25, speed: 20, totalXP: 500))
-}
+// Preview requires environment objects
+// #Preview { BattleView(playerStats: PlayerStats(strength: 30, stamina: 25, speed: 20, totalXP: 500)) }

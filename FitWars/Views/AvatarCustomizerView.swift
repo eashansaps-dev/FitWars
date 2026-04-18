@@ -2,6 +2,8 @@ import SwiftUI
 
 struct AvatarCustomizerView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @Environment(AuthManager.self) private var authManager
+    @Environment(FirestoreService.self) private var firestoreService
     @State private var config = AvatarConfig()
     @State private var step = 0
 
@@ -62,7 +64,17 @@ struct AvatarCustomizerView: View {
 
                 Button(step == steps.count - 1 ? "Let's Fight" : "Next") {
                     if step == steps.count - 1 {
+                        // Task 9.3: Keep UserDefaults save
                         config.save()
+                        // Task 9.1: Sync avatar to Firestore
+                        if let userId = authManager.currentUserId {
+                            Task {
+                                try? await firestoreService.updateAvatarConfig(
+                                    userId: userId,
+                                    avatarConfig: config
+                                )
+                            }
+                        }
                         hasCompletedOnboarding = true
                     } else {
                         step += 1
@@ -78,6 +90,15 @@ struct AvatarCustomizerView: View {
             .padding(.horizontal)
         }
         .padding()
+        .task {
+            // Task 9.2: Fetch avatar from Firestore and reconcile
+            if let userId = authManager.currentUserId {
+                if let profile = try? await firestoreService.fetchUserProfile(userId: userId) {
+                    // Prefer Firestore version
+                    config = profile.avatarConfig
+                }
+            }
+        }
     }
 
     // MARK: - Steps
@@ -207,6 +228,5 @@ struct AvatarCustomizerView: View {
     }
 }
 
-#Preview {
-    AvatarCustomizerView()
-}
+// Preview requires environment objects
+// #Preview { AvatarCustomizerView() }
