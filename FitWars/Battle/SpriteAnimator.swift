@@ -42,7 +42,8 @@ class SpriteAnimator {
     // MARK: - Atlas Loading
 
     /// Loads a texture atlas by name, groups its frames by animation prefix,
-    /// and caches the results. Falls back to a colored rectangle if the atlas is missing.
+    /// and caches the results. Falls back to loading individual images by name,
+    /// then to a colored rectangle if nothing works.
     ///
     /// - Parameter atlasName: Bundle name of the `.atlas` / `.spriteatlas` asset.
     func loadAnimations(atlasName: String) {
@@ -52,10 +53,16 @@ class SpriteAnimator {
             atlas = cached
         } else {
             let candidate = SKTextureAtlas(named: atlasName)
-            // SKTextureAtlas(named:) never returns nil — an empty textureNames
-            // array signals the atlas doesn't exist in the bundle.
-            if candidate.textureNames.isEmpty {
-                print("[SpriteAnimator] ⚠️ Atlas '\(atlasName)' not found — using fallback texture.")
+            let names = candidate.textureNames
+            print("[SpriteAnimator] Atlas '\(atlasName)' has \(names.count) textures: \(names.sorted())")
+            
+            if names.isEmpty {
+                // Atlas not found via SKTextureAtlas — try loading images directly
+                print("[SpriteAnimator] ⚠️ Atlas '\(atlasName)' empty — trying direct image loading...")
+                if loadImagesDirectly(atlasName: atlasName) {
+                    return
+                }
+                print("[SpriteAnimator] ⚠️ Direct loading also failed — using fallback texture.")
                 applyFallbackTexture()
                 return
             }
@@ -64,6 +71,61 @@ class SpriteAnimator {
         }
 
         groupFrames(from: atlas)
+        print("[SpriteAnimator] Loaded \(animations.count) animations: \(animations.keys.sorted())")
+    }
+    
+    /// Tries to load sprite frames directly as UIImage/SKTexture by name,
+    /// bypassing the atlas system. This works when images are in the asset catalog
+    /// but the atlas isn't being recognized.
+    private func loadImagesDirectly(atlasName: String) -> Bool {
+        let frameNames = [
+            "idle": ["idle_01", "idle_02", "idle_03", "idle_04"],
+            "walk_forward": ["walk_forward_01", "walk_forward_02", "walk_forward_03", "walk_forward_04"],
+            "walk_backward": ["walk_backward_01", "walk_backward_02", "walk_backward_03", "walk_backward_04"],
+            "light_attack": ["light_attack_01", "light_attack_02", "light_attack_03", "light_attack_04"],
+            "heavy_attack": ["heavy_attack_01", "heavy_attack_02"],
+            "blocking": ["blocking_01", "blocking_02"],
+            "hit_stun": ["hit_stun_01", "hit_stun_02"],
+            "dodging": ["dodging_01", "dodging_02"],
+            "knockdown": ["knockdown_01"],
+            "special_attack": ["special_attack_01", "special_attack_02"],
+            "victory": ["victory_01"],
+        ]
+        
+        var loadedAny = false
+        
+        for (animName, names) in frameNames {
+            var textures: [SKTexture] = []
+            for name in names {
+                // Try loading as UIImage first (works for asset catalog images)
+                if let uiImage = UIImage(named: name) {
+                    textures.append(SKTexture(image: uiImage))
+                } else {
+                    // Try with atlas prefix
+                    let prefixed = "\(atlasName)/\(name)"
+                    let tex = SKTexture(imageNamed: prefixed)
+                    // SKTexture(imageNamed:) never returns nil but may return a placeholder
+                    // Check if it has a reasonable size
+                    if tex.size().width > 1 && tex.size().height > 1 {
+                        textures.append(tex)
+                    }
+                }
+            }
+            if !textures.isEmpty {
+                animations[animName] = textures
+                loadedAny = true
+            }
+        }
+        
+        if loadedAny {
+            print("[SpriteAnimator] Direct loading found \(animations.count) animations: \(animations.keys.sorted())")
+            // Set the first idle frame as the sprite's texture
+            if let idleFrames = animations["idle"], let first = idleFrames.first {
+                sprite?.texture = first
+            }
+        }
+        
+        return loadedAny
     }
 
     // MARK: - Frame Grouping
