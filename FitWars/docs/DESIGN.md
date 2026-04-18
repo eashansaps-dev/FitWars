@@ -3,92 +3,100 @@
 ## 1. Architecture Overview
 
 ```
-┌──────────────────────────────────────────┐
-│           iOS Client (SwiftUI + SpriteKit)│
-│                                           │
-│  ┌──────────┐  ┌───────────────────────┐ │
-│  │HealthKit │  │    Stats Engine       │ │
-│  │ Manager  │──│  (local compute)      │ │
-│  └──────────┘  └───────────┬───────────┘ │
-│                             │             │
-│  ┌──────────┐  ┌───────────▼───────────┐ │
-│  │SpriteKit │  │    API Service        │ │
-│  │Battle    │  │  (Firebase wrapper)   │ │
-│  │Scene     │  └───────────┬───────────┘ │
-│  └──────────┘              │             │
-└────────────────────────────┼─────────────┘
-                             │
-              ┌──────────────▼──────────────┐
-              │      Firebase Backend        │
-              │                              │
-              │  ┌────────────────────────┐  │
-              │  │   Firestore DB         │  │
-              │  │  (users, stats,        │  │
-              │  │   battles, characters) │  │
-              │  └────────────────────────┘  │
-              │                              │
-              │  ┌────────────────────────┐  │
-              │  │  Cloud Functions       │  │
-              │  │  (battle resolve,      │  │
-              │  │   leaderboard)         │  │
-              │  └────────────────────────┘  │
-              │                              │
-              │  ┌────────────────────────┐  │
-              │  │   Firebase Auth        │  │
-              │  └────────────────────────┘  │
-              └──────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│           iOS Client (SwiftUI + SpriteKit)    │
+│                                               │
+│  ┌──────────┐  ┌───────────────────────────┐ │
+│  │HealthKit │  │     Stats Engine          │ │
+│  │ Manager  │──│  (local XP compute)       │ │
+│  └──────────┘  └───────────┬───────────────┘ │
+│                             │                 │
+│  ┌──────────────────────┐  │                 │
+│  │ SpriteKit Battle     │  │                 │
+│  │ ├─ CameraController  │  │                 │
+│  │ ├─ ParallaxBackground│  │                 │
+│  │ ├─ FighterNode ×2    │  │                 │
+│  │ ├─ InputManager      │  │                 │
+│  │ ├─ AIController      │  │                 │
+│  │ ├─ ComboSystem       │  │                 │
+│  │ ├─ HUDOverlay        │  │                 │
+│  │ ├─ VFXManager        │  │                 │
+│  │ └─ SoundManager      │  │                 │
+│  └──────────────────────┘  │                 │
+│                             │                 │
+│  ┌──────────────────────┐  │                 │
+│  │   API Service        │──┘                 │
+│  │  (Firebase wrapper)  │                    │
+│  └──────────┬───────────┘                    │
+└─────────────┼────────────────────────────────┘
+              │
+┌─────────────▼────────────────────────────────┐
+│           Firebase Backend                    │
+│                                               │
+│  ┌─────────────┐  ┌────────────────────────┐ │
+│  │ Firestore   │  │ Realtime Database      │ │
+│  │ (users,     │  │ (PvP matchmaking,      │ │
+│  │  stats,     │  │  game state relay)     │ │
+│  │  battles)   │  │                        │ │
+│  └─────────────┘  └────────────────────────┘ │
+│                                               │
+│  ┌─────────────┐  ┌────────────────────────┐ │
+│  │ Cloud       │  │ Firebase Auth          │ │
+│  │ Functions   │  │ (Sign in with Apple)   │ │
+│  └─────────────┘  └────────────────────────┘ │
+└───────────────────────────────────────────────┘
 ```
 
 ## 2. App Name Configuration
 
-All user-facing references to the app name go through a single constant:
-
 ```swift
 enum AppConfig {
     static let appName = "PulseCombat"
+    static let dailyXPCap = 100
+    static let maxBattlesPerDay = 3
+    static let xpPerLevel = 100
 }
 ```
-
-Changing the name later = update this constant + App Store metadata. No string literals scattered through code.
 
 ## 3. Client Modules
 
-### 3.1 HealthKit Manager
-- Requests permissions: steps, active calories, workout sessions
-- Queries daily summaries via `HKStatisticsCollectionQuery`
-- Runs on app foreground + background refresh
-- Returns normalized `DailyActivity` struct
+### 3.1 HealthKit Manager (✅ Implemented)
+- Requests permissions: steps, active calories, exercise time, workouts
+- Queries daily summaries via `HKStatisticsQueryDescriptor`
+- Returns `DailyActivity` struct
 
-### 3.2 Stats Engine
-- Converts `DailyActivity` → XP gains (with daily caps)
-- Maintains local stat cache
-- Syncs derived stats to Firebase on each calculation
-- **Key rule:** Raw health data stays on device. Only computed stats are sent to backend.
+### 3.2 Stats Engine (✅ Implemented)
+- Converts `DailyActivity` → XP gains with daily caps (100/stat)
+- Workout-type-specific XP (strength/stamina/speed/HIIT split)
+- **TODO:** Sync derived stats to Firestore
 
-### 3.3 Character System
-- User selects character model at onboarding (male/female fighter)
-- Character choice stored in user profile (Firestore + local)
-- Character model determines which sprite sheet to load — nothing else
-- Stats are identical regardless of character choice
+### 3.3 Avatar System (✅ Implemented)
+- `AvatarConfig` with customizable features (skin, face, eyes, hair, outfit)
+- `AvatarRenderer` (SwiftUI) for dashboard/profile
+- Persisted to UserDefaults locally
+- **TODO:** Sync to Firestore user profile
 
-```swift
-enum CharacterModel: String, Codable, CaseIterable {
-    case maleDefault = "fighter_male_01"
-    case femaleDefault = "fighter_female_01"
-    // Future: additional models added here
-}
-```
+### 3.4 Battle System (✅ Implemented)
+Full SpriteKit real-time combat with subsystem architecture:
 
-### 3.4 SpriteKit Battle Scene (Phase 2)
-- `SKScene` embedded in SwiftUI via `SpriteView`
-- Loads character sprite sheets based on each player's `CharacterModel`
-- Plays back server-resolved battle as animated sequence
-- MVP fallback: static result screen with stat comparison
+| Subsystem | File | Purpose |
+|-----------|------|---------|
+| BattleScene | `BattleScene.swift` | Orchestrator — wires all subsystems |
+| FighterNode | `FighterNode.swift` | Sprite-based fighter with state machine |
+| SpriteAnimator | `SpriteAnimator.swift` | Texture atlas frame playback |
+| InputManager | `InputManager.swift` | Virtual joystick + action buttons |
+| AIController | `AIController.swift` | Reactive CPU with 3 difficulty levels |
+| ComboSystem | `ComboSystem.swift` | Hit chain tracking + damage scaling |
+| HUDOverlay | `HUDOverlay.swift` | Health bars, timer, combo counter, special meter |
+| VFXManager | `VFXManager.swift` | Particles, screen shake, slow-mo |
+| CameraController | `CameraController.swift` | Dynamic framing + zoom |
+| ParallaxBackground | `ParallaxBackground.swift` | 3-layer scrolling stage |
+| SoundManager | `SoundManager.swift` | Event-driven audio hooks |
+| DifficultyLevel | `DifficultyLevel.swift` | AI config per difficulty |
 
-### 3.5 API Service
-- Thin wrapper around Firebase SDK
-- Handles auth, Firestore reads/writes, Cloud Function calls
-- Offline support via Firestore local cache
+### 3.5 API Service (🔜 Needs Firebase integration)
+- Currently uses `MockAPIService` with hardcoded bot opponents
+- **TODO:** Replace with real Firebase Firestore reads/writes
 
 ## 4. Data Model
 
@@ -98,7 +106,7 @@ enum CharacterModel: String, Codable, CaseIterable {
 ```json
 {
   "username": "string",
-  "characterModel": "fighter_male_01",
+  "avatarConfig": { ... },
   "level": 1,
   "totalXP": 0,
   "rank": 0,
@@ -123,132 +131,170 @@ enum CharacterModel: String, Codable, CaseIterable {
 {
   "player1": "userId",
   "player2": "userId",
-  "player1Score": 42.3,
-  "player2Score": 38.7,
   "winner": "userId",
+  "mode": "ai|pvp",
   "timestamp": "timestamp"
 }
 ```
 
-**leaderboard/{userId}**
+### Firebase Realtime Database (for PvP)
+
+**matchmaking/{queueId}**
 ```json
 {
-  "username": "string",
-  "rank": 1,
-  "wins": 15,
-  "losses": 3,
-  "weekStart": "date"
+  "userId": "string",
+  "rank": 0,
+  "stats": { "strength": 10, "stamina": 10, "speed": 10 },
+  "timestamp": "serverTimestamp"
 }
 ```
 
-## 5. Battle Resolution (Cloud Function)
-
-```
-function resolveBattle(player1Stats, player2Stats):
-    score1 = (p1.strength * 0.4) + (p1.stamina * 0.3) + (p1.speed * 0.3) + random(0, 5)
-    score2 = (p2.strength * 0.4) + (p2.stamina * 0.3) + (p2.speed * 0.3) + random(0, 5)
-    winner = score1 > score2 ? player1 : player2
-    return { winner, score1, score2 }
-```
-
-Battle resolution runs server-side to prevent client manipulation.
-
-### Post-Battle Insights (computed client-side from result)
-
-```swift
-struct BattleInsight {
-    let statDeltas: [StatType: Int]       // e.g. strength: -17, stamina: +17, speed: -22
-    let weakestStat: StatType             // your lowest stat
-    let biggestGap: StatType              // largest negative delta vs opponent
-    let suggestedWorkouts: [String]       // mapped from weakest/gap stats
+**games/{gameId}**
+```json
+{
+  "player1": "userId",
+  "player2": "userId",
+  "state": "waiting|active|finished",
+  "inputs": {
+    "player1": [{ "frame": 0, "action": "lightAttack", "direction": 1.0 }],
+    "player2": [{ "frame": 0, "action": "block", "direction": -1.0 }]
+  },
+  "winner": null,
+  "createdAt": "serverTimestamp"
 }
-
-// Workout suggestion mapping:
-// strength → ["Weight training", "Core workouts", "HIIT"]
-// stamina  → ["Cycling", "Swimming", "Yoga", "Longer cardio"]
-// speed    → ["Running", "Walking (8,000+ steps/day)"]
 ```
 
-Insights are always shown — on wins (to highlight growth areas) and losses (to drive specific workouts).
+## 5. Real-Time PvP Architecture (Planned)
 
-## 6. HealthKit Data Flow
+### Networking Model: Input Relay via Firebase Realtime Database
 
 ```
-1. App foreground / background refresh triggers
-2. HealthKitManager queries last 24h:
-   - stepCount
-   - activeEnergyBurned
-   - appleExerciseTime
-   - HKWorkout samples (with workoutActivityType)
-3. Returns DailyActivity {
-     steps, activeCalories, exerciseMinutes, date,
-     workouts: [{ type, duration, calories, distance }]
-   }
-4. StatsEngine computes XP by workout type:
-
-   Strength XP (from strength/core/HIIT workouts):
-     +20 per session
-     +5 per 10 min duration
-     +3 per 100 kcal
-     cap: 100/day
-
-   Stamina XP (from cardio workouts + general activity):
-     +5 per cardio session (cycling, swimming, yoga, HIIT)
-     +3 per 10 min appleExerciseTime
-     +2 per 100 active calories
-     cap: 100/day
-
-   Speed XP (from running + steps):
-     +10 per running session
-     +5 per 1,000 steps
-     +3 per km running distance
-     cap: 100/day
-
-   HIIT splits 50/50 between Strength and Stamina.
-
-5. Stats updated locally + synced to Firestore
+Player A Device                Firebase RTDB              Player B Device
+     │                              │                          │
+     │── send input (frame N) ─────>│                          │
+     │                              │──── relay input ────────>│
+     │                              │                          │
+     │<──── relay input ────────────│<── send input (frame N) ─│
+     │                              │                          │
+     │  [both simulate locally]     │   [both simulate locally]│
 ```
 
-## 7. Auth Flow
+Each client runs the full battle simulation locally. Inputs are relayed through Firebase RTDB with minimal latency. Both clients process the same inputs in the same order to stay in sync.
+
+### Matchmaking Flow
+1. Player taps "Find Match" → writes to `matchmaking/` queue in RTDB
+2. Cloud Function triggers on new queue entry → finds compatible opponent (rank ± 5 levels)
+3. Cloud Function creates `games/{gameId}` with both player IDs
+4. Both clients listen to `games/{gameId}` → transition to battle scene
+5. Inputs written to `games/{gameId}/inputs/` in real-time
+6. Game ends → Cloud Function writes result to Firestore `battles/`
+
+### Latency Handling
+- **Input delay:** 2-frame input buffer (33ms at 60fps) to absorb network jitter
+- **Rollback:** If remote input arrives late, rewind and resimulate from the divergence frame
+- **Timeout:** If no input received for 3 seconds, opponent forfeits
+- **Target:** <100ms round-trip for playable experience
+
+### Anti-Cheat for PvP
+- Server validates both players' stats before match starts
+- Input rate limiting (max 10 inputs/second)
+- Game result validated by Cloud Function comparing both clients' reported outcomes
+- Flagged if outcomes disagree → replay analysis
+
+## 6. HealthKit Data Flow (✅ Implemented)
+
+```
+1. App foreground triggers HealthKitManager
+2. Queries last 24h: steps, calories, exercise time, workouts
+3. Returns DailyActivity { steps, activeCalories, exerciseMinutes, workouts[] }
+4. StatsEngine computes XP by workout type (with daily caps)
+5. Stats updated locally
+6. TODO: Sync to Firestore
+```
+
+## 7. Auth Flow (🔜 Next)
 
 - Firebase Auth with Sign in with Apple (required for App Store)
 - Anonymous auth as fallback for onboarding
 - Link anonymous → Apple ID when user is ready
+- User profile created in Firestore on first auth
 
 ## 8. Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| UI | SwiftUI |
-| Battle Rendering | SpriteKit (Phase 2) |
-| Health | HealthKit |
-| Auth | Firebase Auth + Sign in with Apple |
-| Database | Cloud Firestore |
-| Server Logic | Firebase Cloud Functions (Node.js) |
-| Push Notifications | Firebase Cloud Messaging |
-| Analytics | Firebase Analytics |
-| Ads | Google AdMob (rewarded) |
+| Layer | Technology | Status |
+|-------|-----------|--------|
+| UI | SwiftUI | ✅ |
+| Battle Rendering | SpriteKit | ✅ |
+| Health | HealthKit | ✅ |
+| Auth | Firebase Auth + Sign in with Apple | 🔜 |
+| Database | Cloud Firestore | 🔜 |
+| PvP Relay | Firebase Realtime Database | 📋 |
+| Server Logic | Firebase Cloud Functions (Node.js) | 🔜 |
+| Push Notifications | Firebase Cloud Messaging | 📋 |
+| Analytics | Firebase Analytics | 📋 |
+| Ads | Google AdMob (rewarded) | 📋 |
 
 ## 9. Sprite Asset Pipeline
 
-1. Generate base character art (AI tools or commission artist)
-2. Create sprite sheets: idle (4 frames), attack (6 frames), defend (4 frames), hit (4 frames)
-3. Export as PNG atlas per character model
-4. Load into SpriteKit `SKTextureAtlas`
-5. Each `CharacterModel` enum case maps to an atlas name
+1. Generate base art using AI tools (see `docs/SPRITE_ART_GUIDE.md`)
+2. Create sprite sheets per animation state (idle, walk, attack, block, hit, special, knockdown, victory)
+3. Export as PNG with transparency, max 512×512 per frame
+4. Place in Xcode `.spriteatlas` folders
+5. SpriteAnimator auto-detects frames by `{action}_{frame}` naming convention
+6. Fallback: colored rectangles when atlas is missing
 
-**MVP:** Single static image per character. Animated sprites added in Phase 2.
+## 10. File Structure
 
-## 10. Anti-Cheat
+```
+FitWars/
+├── AppConfig.swift
+├── FitWarsApp.swift
+├── Models/
+│   ├── Models.swift          (PlayerStats, DailyActivity, WorkoutEntry, CharacterModel)
+│   └── AvatarConfig.swift    (avatar customization + persistence)
+├── Services/
+│   ├── APIService.swift      (mock API, TODO: Firebase)
+│   ├── BattleEngine.swift    (auto-resolve fallback)
+│   ├── HealthKitManager.swift
+│   └── StatsEngine.swift
+├── Views/
+│   ├── AvatarCustomizerView.swift
+│   ├── AvatarRenderer.swift
+│   ├── BattleResultView.swift
+│   ├── BattleView.swift
+│   ├── CharacterSelectionView.swift
+│   ├── DashboardView.swift
+│   └── ProfileView.swift
+├── Battle/
+│   ├── BattleScene.swift
+│   ├── BattleSpriteView.swift
+│   ├── FighterNode.swift
+│   ├── SpriteAnimator.swift
+│   ├── InputManager.swift
+│   ├── AIController.swift
+│   ├── ComboSystem.swift
+│   ├── HUDOverlay.swift
+│   ├── VFXManager.swift
+│   ├── CameraController.swift
+│   ├── ParallaxBackground.swift
+│   ├── SoundManager.swift
+│   └── DifficultyLevel.swift
+├── Assets.xcassets/
+│   └── fighter_default.spriteatlas/
+└── docs/
+    ├── SPEC.md
+    ├── DESIGN.md
+    ├── TASKS.md
+    └── SPRITE_ART_GUIDE.md
+```
 
-- Daily XP caps (100 per stat) enforced client-side AND server-side
-- Server validates stat deltas — reject if daily gain exceeds caps
-- Flag accounts with abnormal spikes (e.g., 50k steps in 1 hour)
-- Weight workout-derived XP higher than step-only XP
+## 11. Performance Budget
 
-## 11. Offline Support
-
-- Firestore offline persistence enabled
-- Stats computed locally even without network
-- Battles require network (server-resolved)
-- Sync queue for pending stat updates
+| Resource | Budget |
+|----------|--------|
+| Frame rate | 60 FPS minimum on iPhone 13 |
+| Active emitters | Max 8 simultaneous |
+| Texture memory | Max 200 MB during battle |
+| Audio channels | Max 4 concurrent SFX + 1 music |
+| Sprite frame size | Max 512×512 per frame |
+| PvP input latency | <100ms round-trip target |

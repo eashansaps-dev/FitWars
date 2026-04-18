@@ -2,12 +2,13 @@
 
 ## 1. Overview
 
-PulseCombat is an iOS game where real-world fitness activity powers an in-game fighting character. Users compete in asynchronous PvP battles against friends. The more you train in real life, the stronger your character becomes.
+PulseCombat is an iOS game where real-world fitness activity powers an in-game fighting character. Users compete in real-time PvP battles and vs AI. The more you train in real life, the stronger your character becomes.
 
 **Platform:** iOS 17+ (iPhone + Apple Watch)
 **Engine:** SwiftUI + SpriteKit
-**Backend:** Firebase
+**Backend:** Firebase (Auth, Firestore, Cloud Functions, Realtime Database)
 **Health Data:** Apple HealthKit
+**Multiplayer:** Apple GameKit (Game Center) + Firebase Realtime Database
 
 > App name is stored in a single `AppConfig.appName` constant for easy renaming.
 
@@ -16,7 +17,7 @@ PulseCombat is an iOS game where real-world fitness activity powers an in-game f
 1. User works out (walk, run, gym, etc.)
 2. App syncs activity data from HealthKit (daily)
 3. Activity converts into XP and stat upgrades
-4. User enters async PvP battles
+4. User enters battles (vs AI or real-time PvP)
 5. Wins → rewards → rank progression
 6. Repeat
 
@@ -24,12 +25,15 @@ PulseCombat is an iOS game where real-world fitness activity powers an in-game f
 
 **Target:** Semi-realistic 2D — Super Smash Bros with more grounded proportions and shading. Not pixel art, not cartoon, not full 3D.
 
-- Characters are detailed 2D sprite sheets with idle, attack, defend, and hit animations
+- Characters are detailed 2D sprite sheets with idle, walk, attack, block, hit, special, knockdown, and victory animations
 - Battle scenes rendered in SpriteKit (embedded in SwiftUI views)
 - Dashboard/menus are native SwiftUI
-- MVP: static character art with minimal animation. Full sprite animation in Phase 2.
+- Parallax scrolling stage backgrounds with 3 depth layers
 
-**Asset pipeline:** AI-generated base art → artist cleanup → sprite sheet export → SpriteKit atlas.
+**Asset pipeline:** AI-generated base art (Midjourney/Leonardo.ai/Stable Diffusion) → artist cleanup → sprite sheet export → SpriteKit atlas.
+See `docs/SPRITE_ART_GUIDE.md` for detailed prompts and workflow.
+
+**Engine decision:** SpriteKit (staying native). Unity/Unreal considered and rejected — SpriteKit handles 2D fighting games well, integrates natively with HealthKit/SwiftUI/Firebase, and the visual quality gap is an art problem, not an engine problem.
 
 ## 4. Avatar Customization
 
@@ -42,15 +46,13 @@ At onboarding, users build a custom fighter avatar:
 - Skin tone (color spectrum)
 - Face shape (oval, square, round, angular)
 - Eyes (multiple styles)
-- Hair style (short, long, mohawk, bald, braids, etc.)
+- Hair style (short, long, mohawk, bald, braids, ponytail)
 - Hair color (color spectrum)
 - Outfit (gi, tank top, hoodie, armor — unlockable)
 
-**Rendering:** Modular layered system — body parts are separate SwiftUI layers composited into a full character. Same system used in dashboard, battle, and profile.
+**Rendering:** Modular layered system in SwiftUI (AvatarRenderer) for dashboard/profile. SpriteKit sprite sheets for battle.
 
-**Gender:** No gender selection. Avatar is fully customizable — users create whatever fighter they want.
-
-**Post-MVP:** Additional hairstyles, outfits, accessories as cosmetic unlocks/purchases.
+**Gender:** No gender selection. Avatar is fully customizable.
 
 Stats are derived entirely from real-world fitness activity, never from avatar appearance.
 
@@ -62,8 +64,6 @@ Stats are derived entirely from real-world fitness activity, never from avatar a
 | **Stamina** | Cardio workouts, exercise minutes, cycling, swimming, yoga | The Endurance Fighter |
 | **Speed** | Steps, running workouts, running distance | The Speedster |
 | **Level** | Aggregate XP across all stats | — |
-
-No stat differences between male/female characters. Same workout = same XP regardless of character model.
 
 ### HealthKit Workout Type Mapping
 
@@ -82,7 +82,7 @@ No stat differences between male/female characters. Same workout = same XP regar
 
 ## 6. XP System
 
-Workout type matters more than raw calories. A strength session gives Strength XP even if calorie burn is low. A 5k run gives Speed XP regardless of calorie count.
+Workout type matters more than raw calories.
 
 ### Strength XP
 | Source | XP |
@@ -94,7 +94,7 @@ Workout type matters more than raw calories. A strength session gives Strength X
 ### Stamina XP
 | Source | XP |
 |--------|-----|
-| Per cardio workout session (cycling, swimming, yoga, HIIT) | +5 |
+| Per cardio workout session | +5 |
 | Per 10 min of appleExerciseTime | +3 |
 | Per 100 active calories (general) | +2 |
 
@@ -106,73 +106,80 @@ Workout type matters more than raw calories. A strength session gives Strength X
 | Per km of running distance | +3 |
 
 ### HIIT Split
-HIIT workouts award XP to both Strength and Stamina (50/50 split on duration and calorie bonuses).
+HIIT workouts award XP to both Strength and Stamina (50/50 split).
 
-**Daily caps per stat:** 100 XP (prevents abuse, encourages consistency)
-
-**Leveling curve:** Each level requires `level * 100` total XP. Level 1 = 100 XP, Level 10 = 1,000 XP.
+**Daily caps per stat:** 100 XP
+**Leveling curve:** Each level requires `level * 100` total XP.
 
 ## 7. Battle System
 
-**Type:** Real-time 2D combat (Mortal Kombat / Street Fighter style). Side-view, on-screen controls.
+### 7.1 Current: User vs AI (✅ Implemented)
 
-**Controls:** Attack, Block, Dodge, Special Move (unlocked by fitness milestones)
+Real-time 2D combat with SpriteKit. Side-view, on-screen controls.
+
+**Controls:** Virtual joystick (left) + action buttons (right): Light Attack, Heavy Attack, Block, Special
+**Special moves:** Forward-forward-attack input sequence when special meter is full
 
 **How fitness stats affect combat:**
 - Strength → more damage per hit
-- Stamina → larger health pool, faster recovery
-- Speed → faster movement, quicker attack animations
+- Stamina → larger health pool
+- Speed → faster movement
 
-**Key principle:** Fitness stats give you an edge, but skill still matters. A Level 5 player with good timing can beat a Level 10 player who button-mashes.
+**AI difficulty levels:** Easy, Medium, Hard
+- Easy: 0.5s reaction time, no combos
+- Medium: 0.3s reaction, 2-hit combos
+- Hard: 0.15s reaction, 4-hit combos, pattern tracking, counter-play
 
-**MVP (current):** Auto-resolved battles with stat comparison (placeholder until SpriteKit combat is built).
+**Combo system:** Chain attacks within 0.4s window, damage scales 1.0x → 1.1x → 1.2x etc.
+**Special meter:** Fills on hits dealt (5%) and received (3%). 5+ hit combo awards 10% bonus.
 
-**Phase 2:** SpriteKit real-time combat with on-screen controls, local play vs bots.
+**Visual effects:** Hit sparks, screen shake, special attack flash, slow-motion KO, dynamic camera zoom.
+**HUD:** Gradient health bars with ghost damage trail, round timer (pulses red at ≤10s), combo counter, special meter with "READY" indicator.
 
-**Phase 3:** Real-time multiplayer via GameKit.
+### 7.2 Planned: Real-Time PvP Multiplayer
 
-**Algorithm (auto-resolve fallback):**
+**Type:** Real-time online PvP — both players fight simultaneously over the network.
+
+**Networking approach:** Firebase Realtime Database for matchmaking + signaling, then peer-to-peer via GameKit (Game Center) for the actual fight. This gives low-latency gameplay while using Firebase for the social layer.
+
+**Alternative:** Full server-authoritative via Firebase Realtime Database with input relay. Higher latency but prevents cheating.
+
+**Key challenges:**
+- Input synchronization (lockstep or rollback netcode)
+- Latency compensation (target <100ms round-trip)
+- Disconnection handling (forfeit after timeout)
+- Anti-cheat (server validates stats, client validates inputs)
+
+**Matchmaking:** Skill-based using rank + level range. Queue via Firebase, match via Cloud Function.
+
+### 7.3 Auto-Resolve Fallback
+
+For async challenges or when real-time isn't available:
 ```
 score = (strength * 0.4) + (stamina * 0.3) + (speed * 0.3) + random(0..5)
-winner = player with higher score
 ```
-
-**Battle flow (MVP):**
-1. User taps "Fight" → matched with opponent (random or friend)
-2. Auto-resolve using both players' stats
-3. Result screen shows outcome with stat comparison + workout suggestions
-4. Winner gets +25 XP bonus + rank points
-
-**Limits:** 3 battles per day (free), more via rewarded ads.
 
 ### Post-Battle Insights
 
-Every battle result includes a personalized breakdown:
+Every battle result includes:
+1. **Stat Comparison** — side-by-side with delta per stat
+2. **Weakness Highlight** — identifies weakest stat and biggest gap
+3. **Workout Suggestions** — maps weak stats to real-world workouts
+4. **Win insights** — even on wins, highlight growth areas
 
-1. **Stat Comparison** — side-by-side of your stats vs opponent's, with delta (+/-) per stat
-2. **Weakness Highlight** — identifies your weakest stat and the biggest gap vs opponent
-3. **Workout Suggestions** — maps each weak stat to specific real-world workouts:
-   - Low Strength → "Try: Weight training, Core workouts, HIIT"
-   - Low Stamina → "Try: Cycling, Swimming, Yoga, longer cardio sessions"
-   - Low Speed → "Try: Running, Walking (aim for 8,000+ steps/day)"
-4. **Win insights** — even on wins, highlight your weakest stat so there's always a next goal
-
-This turns every loss into a fitness plan and every win into motivation to stay balanced.
-
-## 8. Social Features (MVP)
+## 8. Social Features
 
 - Friends list (add by username)
 - Challenge a specific friend
 - Global leaderboard (weekly reset)
-
-**Post-MVP:** Rank tiers (Bronze → Diamond), guilds/teams.
+- **Planned:** Rank tiers (Bronze → Diamond), guilds/teams
 
 ## 9. Retention Mechanics
 
 - Daily streak bonus (+10% XP per consecutive day, max 7x)
 - 3 free battles per day
 - Comeback bonus if inactive 3+ days
-- Weekly leaderboard reset (fresh competition)
+- Weekly leaderboard reset
 
 ## 10. Monetization
 
@@ -187,38 +194,43 @@ This turns every loss into a fitness plan and every win into motivation to stay 
 
 ## 11. Privacy & Compliance
 
-- HealthKit permissions requested explicitly with clear explanation
-- Raw health data never exposed to other users or stored on server
-- Only derived stats (strength/stamina/speed scores) leave the device
+- HealthKit permissions requested explicitly
+- Raw health data never leaves the device
+- Only derived stats (strength/stamina/speed) sent to backend
 - Users can opt out and delete data at any time
 - Compliant with Apple HealthKit guidelines
 
-## 12. Screens (MVP)
+## 12. Screens
 
-1. **Onboarding** — Character selection (male/female), HealthKit permission
-2. **Dashboard** — Character view, today's stats, streak counter
-3. **Battle** — Opponent preview, fight button, results
-4. **Leaderboard** — Friends + global rankings
-5. **Profile** — Character stats, settings, change character model
+1. **Onboarding** — Avatar customizer (name, skin, face, eyes, hair, outfit), HealthKit permission
+2. **Dashboard** — Avatar view, today's stats, streak counter, XP breakdown
+3. **Battle** — Opponent preview, difficulty picker, fight (SpriteKit), results with insights
+4. **Leaderboard** — Friends + global rankings (planned)
+5. **Profile** — Character stats, settings
 
-## 13. Test Devices
+## 13. Development Phases
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Foundation | ✅ Done | Project setup, models, HealthKit, Stats Engine, avatar customizer |
+| Battle System Overhaul | ✅ Done | SpriteKit combat, AI, HUD, VFX, camera, input, sound hooks |
+| Firebase Auth + Sync | 🔜 Next | Sign in with Apple, stat persistence, user profiles |
+| Sprite Art | 🔜 Next | AI-generated character sprites, stage backgrounds |
+| Real-Time PvP | 📋 Planned | Online multiplayer via GameKit/Firebase |
+| Social + Leaderboard | 📋 Planned | Friends, challenges, rankings |
+| Monetization + Polish | 📋 Planned | Ads, IAP, streak bonuses, polish |
+| Ship | 📋 Planned | TestFlight, App Store submission |
+
+## 14. Test Devices
 
 - iPhone 13 (baseline performance)
 - iPhone 16 Pro (target experience)
 - Apple Watch Series 6 (workout data source)
 
-## 14. Success Metrics
+## 15. Success Metrics
 
 - Day 1 / Day 7 retention
 - Daily active users
 - Battles per user per day
 - Average session length
 - Revenue per user (ARPU)
-
-## 15. Out of Scope (MVP)
-
-- Real-time combat
-- Full SpriteKit battle animations (Phase 2)
-- Deep character customization
-- AR mode
-- Android
