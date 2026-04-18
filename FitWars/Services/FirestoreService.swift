@@ -6,7 +6,11 @@ import FirebaseFirestore
 
 @Observable
 final class FirestoreService: APIService {
-    private let db = Firestore.firestore()
+    private var _db: Firestore?
+    private var db: Firestore {
+        if _db == nil { _db = Firestore.firestore() }
+        return _db!
+    }
 
     // Collection path constants
     static let usersCollection = "users"
