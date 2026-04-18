@@ -1,165 +1,180 @@
 #!/usr/bin/env python3
 """
-Slices the Gemini sprite sheet into individual frames using known layout.
+Slices the Gemini sprite sheet (v2) into individual frames.
 
-Image: 1408x768
-Layout from visual inspection:
-  Row 1 (y~15-150):  IDLE - 4 frames, left section (~x=90 to x=680)
-  Row 2 (y~155-310): WALK 4 frames (x=90-680) + RUN 4 frames (x=720-1380)
-  Row 3 (y~315-455): JUMP - 4 frames (x=90-680)
-  Row 4 (y~460-620): PUNCH - 6 frames (x=90-1050)
-  Row 5 (y~625-765): KICK - 4 frames (x=90-680) + EFFECTS box (skip)
+Image: 1408x768, gray background (no actual transparency)
+Layout (from reference image):
+  Row 1: Idle Fighting Stance - 6 frames
+  Row 2: Walking - 6 frames  
+  Row 3: Punch - 6 frames
+  Row 4: Kick - 6 frames
+  Row 5: Blocking (4 frames) + Hit Reaction (3 frames)
+
+Strategy: divide into a 6-column x 5-row grid, then use content detection
+to find each character within each cell.
 """
 
 from PIL import Image
 from shutil import copy2
 import os
 
-INPUT = "FitWars/assets/Gemini_Generated_Image_wquydrwquydrwquy.png"
+INPUT = "FitWars/assets/Gemini_Generated_Image_wquydrwquydrwquy (1).png"
 OUTPUT_DIR = "FitWars/Assets.xcassets/fighter_default.spriteatlas"
 
 img = Image.open(INPUT).convert("RGBA")
 W, H = img.size
 print(f"Image size: {W}x{H}")
 
-# Define exact frame regions based on the visible layout
-# Each entry: (name, [(x, y, w, h), ...])
-# The sprite sheet has a rounded-rect dark area starting around x=18, y=10
-# Labels take up ~80px on the left
+# The image has text labels on the left (~100px) and a dark border (~18px)
+# Usable area is roughly x=100 to x=1390, y=18 to y=750
+# 5 rows, 6 columns per row (except row 5 which is split differently)
 
-frame_defs = []
+CONTENT_LEFT = 100
+CONTENT_RIGHT = 1390
+CONTENT_TOP = 18
+CONTENT_BOTTOM = 750
 
-# Row 1: IDLE - 4 frames evenly spaced from x~95 to x~660
-# Each frame roughly 140px wide
-idle_y, idle_h = 15, 138
-idle_x_start = 95
-idle_frame_w = 142
-for i in range(4):
-    x = idle_x_start + i * idle_frame_w
-    frame_defs.append(("idle", i+1, x, idle_y, idle_frame_w, idle_h))
+content_w = CONTENT_RIGHT - CONTENT_LEFT  # ~1290
+content_h = CONTENT_BOTTOM - CONTENT_TOP  # ~732
 
-# Row 2 left: WALK - 4 frames
-walk_y, walk_h = 155, 155
-walk_x_start = 95
-walk_frame_w = 142
-for i in range(4):
-    x = walk_x_start + i * walk_frame_w
-    frame_defs.append(("walk_forward", i+1, x, walk_y, walk_frame_w, walk_h))
+ROW_H = content_h // 5  # ~146px per row
+COL_W = content_w // 6  # ~215px per column
 
-# Row 2 right: RUN - 4 frames (starts after "RUN" label ~x=720)
-run_x_start = 740
-run_frame_w = 160
-for i in range(4):
-    x = run_x_start + i * run_frame_w
-    frame_defs.append(("walk_backward", i+1, x, walk_y, run_frame_w, walk_h))
+print(f"Grid: {COL_W}x{ROW_H} per cell")
 
-# Row 3: JUMP - 4 frames
-jump_y, jump_h = 318, 138
-jump_x_start = 95
-jump_frame_w = 155
-for i in range(4):
-    x = jump_x_start + i * jump_frame_w
-    frame_defs.append(("dodging", i+1, x, jump_y, jump_frame_w, jump_h))
+# Detect the background color from corners of the image
+def get_bg_color():
+    pixels = img.load()
+    samples = []
+    for x, y in [(5, 5), (W-5, 5), (5, H-5), (W-5, H-5)]:
+        samples.append(pixels[x, y][:3])
+    return tuple(sum(c) // len(samples) for c in zip(*samples))
 
-# Row 4: PUNCH - 6 frames (wider row)
-punch_y, punch_h = 460, 158
-punch_x_start = 95
-punch_frame_w = 155
-for i in range(6):
-    x = punch_x_start + i * punch_frame_w
-    frame_defs.append(("light_attack", i+1, x, punch_y, punch_frame_w, punch_h))
+BG = get_bg_color()
+print(f"Background color: rgb{BG}")
 
-# Row 5: KICK - 4 frames
-kick_y, kick_h = 625, 140
-kick_x_start = 95
-kick_frame_w = 155
-for i in range(4):
-    x = kick_x_start + i * kick_frame_w
-    frame_defs.append(("heavy_attack", i+1, x, kick_y, kick_frame_w, kick_h))
-
-# Background color to make transparent
-# The background is a gradient gray — we'll use a range
-def make_transparent(frame_img):
-    """Remove the gray background, keeping the character."""
-    pixels = frame_img.load()
-    w, h = frame_img.size
+def remove_background(frame):
+    """Remove gray background pixels, making them transparent."""
+    pixels = frame.load()
+    w, h = frame.size
     
-    # Sample corners to get the local background color
-    corner_samples = []
-    for cx, cy in [(2,2), (w-3,2), (2,h-3), (w-3,h-3)]:
-        if 0 <= cx < w and 0 <= cy < h:
-            corner_samples.append(pixels[cx, cy][:3])
-    
-    if not corner_samples:
-        return frame_img
-    
-    # Average corner color = background
-    avg_r = sum(c[0] for c in corner_samples) // len(corner_samples)
-    avg_g = sum(c[1] for c in corner_samples) // len(corner_samples)
-    avg_b = sum(c[2] for c in corner_samples) // len(corner_samples)
+    # Sample the 4 corners of this specific frame for local bg color
+    corners = []
+    for cx, cy in [(1,1), (w-2,1), (1,h-2), (w-2,h-2)]:
+        corners.append(pixels[cx, cy][:3])
+    local_bg = tuple(sum(c)//len(corners) for c in zip(*corners))
     
     for y in range(h):
         for x in range(w):
             r, g, b, a = pixels[x, y]
-            # Check if this pixel is close to the background color
-            dr = abs(r - avg_r)
-            dg = abs(g - avg_g)
-            db = abs(b - avg_b)
-            if dr < 30 and dg < 30 and db < 30:
+            # Check if pixel is close to local background
+            dr = abs(r - local_bg[0])
+            dg = abs(g - local_bg[1])
+            db = abs(b - local_bg[2])
+            # Also check if it's a neutral gray (r≈g≈b)
+            is_gray = abs(r-g) < 20 and abs(g-b) < 20
+            if (dr < 25 and dg < 25 and db < 25) or (is_gray and 60 < r < 160):
                 pixels[x, y] = (0, 0, 0, 0)
-    
-    return frame_img
+    return frame
 
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+def extract_frame(col, row):
+    """Extract a single frame from the grid."""
+    x = CONTENT_LEFT + col * COL_W
+    y = CONTENT_TOP + row * ROW_H
+    return img.crop((x, y, x + COL_W, y + ROW_H)).copy()
 
-# Remove old placeholder PNGs first
-for f in os.listdir(OUTPUT_DIR):
-    if f.endswith('.png'):
-        os.remove(os.path.join(OUTPUT_DIR, f))
-
-frame_count = 0
-for name, idx, x, y, fw, fh in frame_defs:
-    # Crop frame from sheet
-    box = (x, y, x + fw, y + fh)
-    frame = img.crop(box).copy()
-    
-    # Remove background
-    frame = make_transparent(frame)
-    
-    # Trim transparent edges
+def process_frame(frame, output_name):
+    """Remove bg, trim, center on 256x256 canvas, save."""
+    frame = remove_background(frame)
     bbox = frame.getbbox()
     if not bbox:
-        print(f"  SKIP {name}_{idx:02d} — empty after bg removal")
-        continue
+        print(f"  SKIP {output_name} — empty")
+        return False
     
     cropped = frame.crop(bbox)
     
-    # Place on 256x256 canvas, bottom-center aligned
-    canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
-    # Scale down if too big
+    # Fit into 240x240 max, maintaining aspect ratio
     scale = min(240 / cropped.width, 240 / cropped.height, 1.0)
     if scale < 1.0:
         new_w = int(cropped.width * scale)
         new_h = int(cropped.height * scale)
         cropped = cropped.resize((new_w, new_h), Image.LANCZOS)
     
+    # Place on 256x256 canvas, bottom-center aligned
+    canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     paste_x = (256 - cropped.width) // 2
-    paste_y = 256 - cropped.height - 8  # 8px from bottom
+    paste_y = 256 - cropped.height - 4
     canvas.paste(cropped, (paste_x, paste_y))
     
-    filename = f"{name}_{idx:02d}.png"
-    canvas.save(os.path.join(OUTPUT_DIR, filename))
-    print(f"  Saved: {filename} ({cropped.width}x{cropped.height})")
-    frame_count += 1
+    canvas.save(os.path.join(OUTPUT_DIR, output_name))
+    print(f"  Saved: {output_name} ({cropped.width}x{cropped.height})")
+    return True
 
-# Generate aliases for missing animations
+# Clean output directory
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+for f in os.listdir(OUTPUT_DIR):
+    if f.endswith('.png'):
+        os.remove(os.path.join(OUTPUT_DIR, f))
+
+count = 0
+
+# Row 0: Idle Fighting Stance — 6 frames
+for i in range(6):
+    frame = extract_frame(i, 0)
+    if process_frame(frame, f"idle_{i+1:02d}.png"):
+        count += 1
+
+# Row 1: Walking — 6 frames
+for i in range(6):
+    frame = extract_frame(i, 1)
+    if process_frame(frame, f"walk_forward_{i+1:02d}.png"):
+        count += 1
+
+# Row 2: Punch — 6 frames → light_attack
+for i in range(6):
+    frame = extract_frame(i, 2)
+    if process_frame(frame, f"light_attack_{i+1:02d}.png"):
+        count += 1
+
+# Row 3: Kick — 6 frames → heavy_attack
+for i in range(6):
+    frame = extract_frame(i, 3)
+    if process_frame(frame, f"heavy_attack_{i+1:02d}.png"):
+        count += 1
+
+# Row 4: Blocking (first 4) + Hit Reaction (last 3)
+for i in range(4):
+    frame = extract_frame(i, 4)
+    if process_frame(frame, f"blocking_{i+1:02d}.png"):
+        count += 1
+
+# Hit Reaction starts at column 4 (after "Hit Reaction" label area)
+# Actually from the image it looks like columns 4, 5, and maybe wrapping
+for i in range(3):
+    frame = extract_frame(i + 4, 4)  # columns 4, 5, 6-ish
+    if process_frame(frame, f"hit_stun_{i+1:02d}.png"):
+        count += 1
+
+# Generate walk_backward as mirrored walk_forward
+for i in range(6):
+    src_path = os.path.join(OUTPUT_DIR, f"walk_forward_{i+1:02d}.png")
+    if os.path.exists(src_path):
+        fwd = Image.open(src_path)
+        bwd = fwd.transpose(Image.FLIP_LEFT_RIGHT)
+        bwd.save(os.path.join(OUTPUT_DIR, f"walk_backward_{i+1:02d}.png"))
+        print(f"  Mirrored: walk_backward_{i+1:02d}.png")
+        count += 1
+
+# Aliases for missing animations
 aliases = {
-    "blocking_01.png": "idle_01.png",
-    "hit_stun_01.png": "idle_02.png",
-    "knockdown_01.png": "idle_03.png",
-    "special_attack_01.png": "light_attack_03.png",
-    "special_attack_02.png": "light_attack_04.png",
+    "dodging_01.png": "idle_02.png",
+    "dodging_02.png": "idle_03.png",
+    "knockdown_01.png": "hit_stun_01.png",
+    "special_attack_01.png": "light_attack_04.png",
+    "special_attack_02.png": "light_attack_05.png",
+    "special_attack_03.png": "light_attack_06.png",
     "victory_01.png": "idle_01.png",
+    "victory_02.png": "idle_02.png",
 }
 
 for alias_name, source_name in aliases.items():
@@ -168,6 +183,12 @@ for alias_name, source_name in aliases.items():
     if os.path.exists(src):
         copy2(src, dst)
         print(f"  Alias: {alias_name} -> {source_name}")
-        frame_count += 1
+        count += 1
 
-print(f"\nDone! {frame_count} frames in {OUTPUT_DIR}")
+# Write Contents.json
+import json
+contents = {"info": {"author": "xcode", "version": 1}}
+with open(os.path.join(OUTPUT_DIR, "Contents.json"), "w") as f:
+    json.dump(contents, f, indent=2)
+
+print(f"\nDone! {count} frames in {OUTPUT_DIR}")
