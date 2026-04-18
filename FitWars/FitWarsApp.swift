@@ -1,10 +1,15 @@
 import SwiftUI
+import FirebaseCore
 
 @main
 struct FitWarsApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var engine = StatsEngine()
     @State private var healthKit = HealthKitManager()
+
+    init() {
+        FirebaseApp.configure()
+    }
 
     var body: some Scene {
         WindowGroup {
