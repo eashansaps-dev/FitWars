@@ -17,14 +17,14 @@ class VirtualJoystick: SKNode {
     override init() {
         // Outer ring
         base = SKShapeNode(circleOfRadius: 50)
-        base.strokeColor = SKColor.white.withAlphaComponent(0.4)
-        base.fillColor = SKColor.white.withAlphaComponent(0.1)
+        base.strokeColor = AeroSKColors.hudGlassBorder
+        base.fillColor = AeroSKColors.hudGlassBackground
         base.lineWidth = 2
 
         // Inner thumb
         thumb = SKShapeNode(circleOfRadius: 18)
-        thumb.fillColor = SKColor.white.withAlphaComponent(0.5)
-        thumb.strokeColor = SKColor.white.withAlphaComponent(0.7)
+        thumb.fillColor = SKColor.white.withAlphaComponent(0.35)
+        thumb.strokeColor = AeroSKColors.hudGlassBorder
         thumb.lineWidth = 1
 
         super.init()
@@ -147,11 +147,19 @@ class InputManager: SKNode {
     private func createButton(name: String, label: String, color: SKColor, position: CGPoint, radius: CGFloat) {
         let btn = SKShapeNode(circleOfRadius: radius)
         btn.position = position
-        btn.fillColor = color.withAlphaComponent(0.6)
-        btn.strokeColor = color
-        btn.lineWidth = 2
+        btn.fillColor = SKColor.white.withAlphaComponent(0.2)
+        btn.strokeColor = SKColor.white.withAlphaComponent(0.5)
+        btn.lineWidth = 1.5
         btn.name = name
         btn.alpha = 0.6
+        btn.glowWidth = 2
+
+        // Shine overlay
+        let shine = SKShapeNode(circleOfRadius: radius * 0.7)
+        shine.fillColor = SKColor.white.withAlphaComponent(0.15)
+        shine.strokeColor = .clear
+        shine.position = CGPoint(x: 0, y: radius * 0.2)
+        btn.addChild(shine)
 
         let text = SKLabelNode(text: label)
         text.fontSize = 22

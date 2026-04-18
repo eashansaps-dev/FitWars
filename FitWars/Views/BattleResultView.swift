@@ -10,19 +10,19 @@ struct BattleResultView: View {
                 // Win/Loss banner
                 Text(result.won ? "VICTORY" : "DEFEAT")
                     .font(.largeTitle.bold())
-                    .foregroundStyle(result.won ? .green : .red)
+                    .foregroundStyle(result.won ? AeroColors.successGreen : AeroColors.strengthRed)
                     .padding(.top)
 
                 Text("vs \(result.opponent.username)")
                     .font(.title3)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AeroColors.secondaryText)
 
                 // Score
                 HStack {
                     scoreColumn("You", score: result.playerScore)
                     Text("vs")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AeroColors.secondaryText)
                     scoreColumn(result.opponent.username, score: result.opponentScore)
                 }
 
@@ -30,50 +30,48 @@ struct BattleResultView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Stat Breakdown")
                         .font(.headline)
-                    statRow("Strength", delta: result.insight.strengthDelta, icon: "flame.fill", color: .red)
-                    statRow("Stamina", delta: result.insight.staminaDelta, icon: "heart.fill", color: .green)
-                    statRow("Speed", delta: result.insight.speedDelta, icon: "bolt.fill", color: .blue)
+                        .foregroundStyle(AeroColors.primaryText)
+                    statRow("Strength", delta: result.insight.strengthDelta, icon: "flame.fill", color: AeroColors.strengthRed)
+                    statRow("Stamina", delta: result.insight.staminaDelta, icon: "heart.fill", color: AeroColors.staminaGreen)
+                    statRow("Speed", delta: result.insight.speedDelta, icon: "bolt.fill", color: AeroColors.speedBlue)
                 }
-                .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .aeroCard()
 
                 // Workout suggestions
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Improve your \(result.insight.weakestStat)", systemImage: "lightbulb.fill")
                         .font(.headline)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AeroColors.primaryAccent)
 
                     ForEach(result.insight.suggestions, id: \.self) { suggestion in
                         HStack {
                             Image(systemName: "arrow.right.circle.fill")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(AeroColors.primaryAccent)
                             Text(suggestion)
+                                .foregroundStyle(AeroColors.primaryText)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+                .aeroCard()
 
                 Button("Done", action: onDismiss)
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(.orange)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .buttonStyle(AeroButtonStyle())
+                    .padding(.horizontal)
             }
             .padding()
         }
+        .aeroBackground()
     }
 
     private func scoreColumn(_ label: String, score: Double) -> some View {
         VStack(spacing: 4) {
             Text(String(format: "%.1f", score))
                 .font(.title.bold())
+                .foregroundStyle(AeroColors.primaryText)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AeroColors.secondaryText)
         }
         .frame(maxWidth: .infinity)
     }
@@ -84,12 +82,13 @@ struct BattleResultView: View {
                 .foregroundStyle(color)
                 .frame(width: 24)
             Text(label)
+                .foregroundStyle(AeroColors.primaryText)
             Spacer()
             Text(delta >= 0 ? "+\(delta)" : "\(delta)")
                 .bold()
-                .foregroundStyle(delta >= 0 ? .green : .red)
+                .foregroundStyle(delta >= 0 ? AeroColors.staminaGreen : AeroColors.strengthRed)
             Image(systemName: delta >= 0 ? "checkmark.circle.fill" : "xmark.circle.fill")
-                .foregroundStyle(delta >= 0 ? .green : .red)
+                .foregroundStyle(delta >= 0 ? AeroColors.staminaGreen : AeroColors.strengthRed)
         }
     }
 }

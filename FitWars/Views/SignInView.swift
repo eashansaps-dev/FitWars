@@ -14,14 +14,15 @@ struct SignInView: View {
             // App branding
             Image(systemName: "figure.martial.arts")
                 .font(.system(size: 64))
-                .foregroundStyle(.orange)
+                .foregroundStyle(AeroColors.primaryAccent)
 
             Text(AppConfig.appName)
                 .font(.largeTitle.bold())
+                .foregroundStyle(AeroColors.primaryText)
 
             Text("Track your fitness.\nFight your way to the top.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AeroColors.secondaryText)
                 .multilineTextAlignment(.center)
 
             Spacer()
@@ -42,11 +43,12 @@ struct SignInView: View {
                     .padding()
                     .background(.white)
                     .foregroundStyle(.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(.gray.opacity(0.3), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(AeroColors.glassBorder, lineWidth: 1)
                     )
+                    .shadow(color: AeroColors.skyBlue.opacity(0.12), radius: 8, y: 4)
                 }
                 .padding(.horizontal, 32)
 
@@ -55,13 +57,14 @@ struct SignInView: View {
                     Task { await signInAnonymously() }
                 } label: {
                     Text("Continue as Guest")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AeroColors.secondaryText)
                 }
             }
 
             Spacer()
                 .frame(height: 32)
         }
+        .aeroBackground()
         .alert("Sign In Error", isPresented: $showError) {
             Button("OK", role: .cancel) {}
         } message: {

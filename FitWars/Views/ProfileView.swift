@@ -19,6 +19,7 @@ struct ProfileView: View {
                             if !avatar.name.isEmpty {
                                 Text(avatar.name)
                                     .font(.headline)
+                                    .foregroundStyle(AeroColors.primaryText)
                             }
                         }
                         Spacer()
@@ -27,25 +28,46 @@ struct ProfileView: View {
                 }
 
                 Section("Stats") {
-                    statRow("Strength", value: stats.strength, icon: "flame.fill", color: .red)
-                    statRow("Stamina", value: stats.stamina, icon: "heart.fill", color: .green)
-                    statRow("Speed", value: stats.speed, icon: "bolt.fill", color: .blue)
+                    statRow("Strength", value: stats.strength, icon: "flame.fill", color: AeroColors.strengthRed)
+                    statRow("Stamina", value: stats.stamina, icon: "heart.fill", color: AeroColors.staminaGreen)
+                    statRow("Speed", value: stats.speed, icon: "bolt.fill", color: AeroColors.speedBlue)
                 }
 
                 Section("Progress") {
-                    HStack { Text("Level"); Spacer(); Text("\(stats.level)").bold() }
-                    HStack { Text("Total XP"); Spacer(); Text("\(stats.totalXP)").bold() }
-                    HStack { Text("XP to next level"); Spacer(); Text("\(stats.xpToNextLevel)").bold() }
+                    HStack {
+                        Text("Level").foregroundStyle(AeroColors.primaryText)
+                        Spacer()
+                        Text("\(stats.level)").bold().foregroundStyle(AeroColors.primaryText)
+                    }
+                    HStack {
+                        Text("Total XP").foregroundStyle(AeroColors.primaryText)
+                        Spacer()
+                        Text("\(stats.totalXP)").bold().foregroundStyle(AeroColors.primaryText)
+                    }
+                    HStack {
+                        Text("XP to next level").foregroundStyle(AeroColors.primaryText)
+                        Spacer()
+                        Text("\(stats.xpToNextLevel)").bold().foregroundStyle(AeroColors.primaryText)
+                    }
                 }
 
-                // Task 7.1: Account section
                 accountSection
 
                 Section("About") {
-                    HStack { Text("App"); Spacer(); Text(AppConfig.appName).foregroundStyle(.secondary) }
-                    HStack { Text("Version"); Spacer(); Text("1.0.0").foregroundStyle(.secondary) }
+                    HStack {
+                        Text("App").foregroundStyle(AeroColors.primaryText)
+                        Spacer()
+                        Text(AppConfig.appName).foregroundStyle(AeroColors.secondaryText)
+                    }
+                    HStack {
+                        Text("Version").foregroundStyle(AeroColors.primaryText)
+                        Spacer()
+                        Text("1.0.0").foregroundStyle(AeroColors.secondaryText)
+                    }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .aeroBackground()
             .navigationTitle("Profile")
             .alert("Error", isPresented: $showError) {
                 Button("OK", role: .cancel) {}
@@ -69,7 +91,6 @@ struct ProfileView: View {
         Section("Account") {
             switch authManager.authState {
             case .anonymous:
-                // Task 7.2: Upgrade prompt for anonymous users
                 Button {
                     Task { await upgradeToApple() }
                 } label: {
@@ -77,19 +98,17 @@ struct ProfileView: View {
                         Image(systemName: "apple.logo")
                         Text("Upgrade to Apple ID")
                     }
+                    .foregroundStyle(AeroColors.primaryAccent)
                 }
 
             case .authenticated(_, let email):
-                // Task 7.3: Show email + sign out
                 if let email {
                     HStack {
-                        Text("Email")
+                        Text("Email").foregroundStyle(AeroColors.primaryText)
                         Spacer()
-                        Text(email)
-                            .foregroundStyle(.secondary)
+                        Text(email).foregroundStyle(AeroColors.secondaryText)
                     }
                 }
-                // Task 7.4: Sign out button
                 Button(role: .destructive) {
                     showSignOutConfirmation = true
                 } label: {
@@ -105,9 +124,9 @@ struct ProfileView: View {
     private func statRow(_ label: String, value: Int, icon: String, color: Color) -> some View {
         HStack {
             Image(systemName: icon).foregroundStyle(color)
-            Text(label)
+            Text(label).foregroundStyle(AeroColors.primaryText)
             Spacer()
-            Text("\(value)").bold()
+            Text("\(value)").bold().foregroundStyle(AeroColors.primaryText)
         }
     }
 

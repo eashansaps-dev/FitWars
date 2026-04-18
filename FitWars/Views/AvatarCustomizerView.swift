@@ -13,6 +13,7 @@ struct AvatarCustomizerView: View {
         VStack(spacing: 20) {
             Text(AppConfig.appName)
                 .font(.title2.bold())
+                .foregroundStyle(AeroColors.primaryText)
 
             // Live preview
             AvatarRenderer(config: config, size: 150)
@@ -21,20 +22,21 @@ struct AvatarCustomizerView: View {
             if !config.name.isEmpty {
                 Text(config.name)
                     .font(.headline)
+                    .foregroundStyle(AeroColors.primaryText)
             }
 
             // Step indicator
             HStack(spacing: 8) {
                 ForEach(0..<steps.count, id: \.self) { i in
                     Circle()
-                        .fill(i == step ? .orange : .gray.opacity(0.3))
+                        .fill(i == step ? AeroColors.primaryAccent : AeroColors.skyBlue.opacity(0.2))
                         .frame(width: 8, height: 8)
                 }
             }
 
             Text(steps[step])
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AeroColors.secondaryText)
 
             // Step content
             Group {
@@ -56,17 +58,17 @@ struct AvatarCustomizerView: View {
             HStack(spacing: 16) {
                 if step > 0 {
                     Button("Back") { step -= 1 }
+                        .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.gray.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .background(AeroColors.pearl)
+                        .foregroundStyle(AeroColors.primaryText)
+                        .clipShape(RoundedRectangle(cornerRadius: 18))
                 }
 
                 Button(step == steps.count - 1 ? "Let's Fight" : "Next") {
                     if step == steps.count - 1 {
-                        // Task 9.3: Keep UserDefaults save
                         config.save()
-                        // Task 9.1: Sync avatar to Firestore
                         if let userId = authManager.currentUserId {
                             Task {
                                 try? await firestoreService.updateAvatarConfig(
@@ -81,20 +83,19 @@ struct AvatarCustomizerView: View {
                     }
                 }
                 .disabled(step == 0 && config.name.trimmingCharacters(in: .whitespaces).isEmpty)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(step == 0 && config.name.trimmingCharacters(in: .whitespaces).isEmpty ? .gray : .orange)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .buttonStyle(AeroButtonStyle(
+                    gradient: step == 0 && config.name.trimmingCharacters(in: .whitespaces).isEmpty
+                        ? LinearGradient(colors: [.gray], startPoint: .top, endPoint: .bottom)
+                        : AeroGradients.buttonPrimary
+                ))
             }
             .padding(.horizontal)
         }
         .padding()
+        .aeroBackground()
         .task {
-            // Task 9.2: Fetch avatar from Firestore and reconcile
             if let userId = authManager.currentUserId {
                 if let profile = try? await firestoreService.fetchUserProfile(userId: userId) {
-                    // Prefer Firestore version
                     config = profile.avatarConfig
                 }
             }
@@ -117,7 +118,7 @@ struct AvatarCustomizerView: View {
                     .fill(tone.color)
                     .frame(width: 44, height: 44)
                     .overlay(
-                        Circle().stroke(.orange, lineWidth: config.skinTone == tone ? 3 : 0)
+                        Circle().stroke(AeroColors.primaryAccent, lineWidth: config.skinTone == tone ? 3 : 0)
                     )
                     .onTapGesture { config.skinTone = tone }
             }
@@ -132,12 +133,12 @@ struct AvatarCustomizerView: View {
                     Image(systemName: shape.icon)
                         .font(.title)
                         .frame(width: 50, height: 50)
-                        .background(config.faceShape == shape ? .orange.opacity(0.2) : .gray.opacity(0.1))
+                        .background(config.faceShape == shape ? AeroColors.skyBlue.opacity(0.15) : .gray.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     Text(shape.rawValue.capitalized)
                         .font(.caption)
                 }
-                .foregroundStyle(config.faceShape == shape ? .orange : .secondary)
+                .foregroundStyle(config.faceShape == shape ? AeroColors.primaryAccent : AeroColors.secondaryText)
                 .onTapGesture { config.faceShape = shape }
             }
         }
@@ -150,12 +151,12 @@ struct AvatarCustomizerView: View {
                     Image(systemName: "eye")
                         .font(.title)
                         .frame(width: 50, height: 50)
-                        .background(config.eyeStyle == style ? .orange.opacity(0.2) : .gray.opacity(0.1))
+                        .background(config.eyeStyle == style ? AeroColors.skyBlue.opacity(0.15) : .gray.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 10))
                     Text(style.label)
                         .font(.caption)
                 }
-                .foregroundStyle(config.eyeStyle == style ? .orange : .secondary)
+                .foregroundStyle(config.eyeStyle == style ? AeroColors.primaryAccent : AeroColors.secondaryText)
                 .onTapGesture { config.eyeStyle = style }
             }
         }
@@ -163,7 +164,6 @@ struct AvatarCustomizerView: View {
 
     private var hairStep: some View {
         VStack(spacing: 12) {
-            // Hair style
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(AvatarConfig.HairStyle.allCases, id: \.self) { style in
@@ -171,8 +171,8 @@ struct AvatarCustomizerView: View {
                             .font(.subheadline)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(config.hairStyle == style ? .orange : .gray.opacity(0.15))
-                            .foregroundStyle(config.hairStyle == style ? .white : .primary)
+                            .background(config.hairStyle == style ? AeroColors.primaryAccent : .gray.opacity(0.15))
+                            .foregroundStyle(config.hairStyle == style ? .white : AeroColors.primaryText)
                             .clipShape(Capsule())
                             .onTapGesture { config.hairStyle = style }
                     }
@@ -180,7 +180,6 @@ struct AvatarCustomizerView: View {
                 .padding(.horizontal)
             }
 
-            // Hair color
             if config.hairStyle != .bald {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 8) {
                     ForEach(AvatarConfig.hairColors, id: \.red) { color in
@@ -188,7 +187,7 @@ struct AvatarCustomizerView: View {
                             .fill(color.color)
                             .frame(width: 32, height: 32)
                             .overlay(
-                                Circle().stroke(.orange, lineWidth: config.hairColor == color ? 3 : 0)
+                                Circle().stroke(AeroColors.primaryAccent, lineWidth: config.hairColor == color ? 3 : 0)
                             )
                             .onTapGesture { config.hairColor = color }
                     }
@@ -207,12 +206,12 @@ struct AvatarCustomizerView: View {
                         .frame(width: 50, height: 50)
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(.orange, lineWidth: config.outfit == outfit ? 3 : 0)
+                                .stroke(AeroColors.primaryAccent, lineWidth: config.outfit == outfit ? 3 : 0)
                         )
                     Text(outfit.label)
                         .font(.caption)
                 }
-                .foregroundStyle(config.outfit == outfit ? .orange : .secondary)
+                .foregroundStyle(config.outfit == outfit ? AeroColors.primaryAccent : AeroColors.secondaryText)
                 .onTapGesture { config.outfit = outfit }
             }
         }
@@ -223,10 +222,7 @@ struct AvatarCustomizerView: View {
         case .gi: .white
         case .tankTop: .gray
         case .hoodie: .indigo
-        case .armor: .orange
+        case .armor: AeroColors.primaryAccent
         }
     }
 }
-
-// Preview requires environment objects
-// #Preview { AvatarCustomizerView() }

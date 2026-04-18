@@ -15,6 +15,7 @@ struct DashboardView: View {
                 }
                 .padding()
             }
+            .aeroBackground()
             .navigationTitle(AppConfig.appName)
             .task {
                 await healthKit.requestAuthorization()
@@ -34,25 +35,27 @@ struct DashboardView: View {
             if !avatar.name.isEmpty {
                 Text(avatar.name)
                     .font(.title3.bold())
+                    .foregroundStyle(AeroColors.primaryText)
             }
 
             Text("Level \(engine.stats.level)")
                 .font(.title2.bold())
+                .foregroundStyle(AeroColors.primaryText)
 
             Text("\(engine.stats.xpToNextLevel) XP to next level")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AeroColors.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .aeroCard()
     }
 
     private var statsGrid: some View {
         HStack(spacing: 12) {
-            statBox("Strength", value: engine.stats.strength, icon: "flame.fill", color: .red)
-            statBox("Stamina", value: engine.stats.stamina, icon: "heart.fill", color: .green)
-            statBox("Speed", value: engine.stats.speed, icon: "bolt.fill", color: .blue)
+            statBox("Strength", value: engine.stats.strength, icon: "flame.fill", color: AeroColors.strengthRed)
+            statBox("Stamina", value: engine.stats.stamina, icon: "heart.fill", color: AeroColors.staminaGreen)
+            statBox("Speed", value: engine.stats.speed, icon: "bolt.fill", color: AeroColors.speedBlue)
         }
     }
 
@@ -63,19 +66,21 @@ struct DashboardView: View {
                 .foregroundStyle(color)
             Text("\(value)")
                 .font(.title.bold())
+                .foregroundStyle(AeroColors.primaryText)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AeroColors.secondaryText)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .aeroCard(cornerRadius: 16)
     }
 
     private var todayProgress: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Today's Activity")
                 .font(.headline)
+                .foregroundStyle(AeroColors.primaryText)
 
             progressRow("Steps", value: "\(healthKit.todayActivity.steps)", icon: "figure.walk")
             progressRow("Active Cal", value: "\(Int(healthKit.todayActivity.activeCalories)) kcal", icon: "flame")
@@ -86,27 +91,29 @@ struct DashboardView: View {
 
             Text("Today's XP")
                 .font(.headline)
+                .foregroundStyle(AeroColors.primaryText)
 
             HStack {
-                xpBadge("STR", xp: engine.todayXP.strength, color: .red)
-                xpBadge("STA", xp: engine.todayXP.stamina, color: .green)
-                xpBadge("SPD", xp: engine.todayXP.speed, color: .blue)
+                xpBadge("STR", xp: engine.todayXP.strength, color: AeroColors.strengthRed)
+                xpBadge("STA", xp: engine.todayXP.stamina, color: AeroColors.staminaGreen)
+                xpBadge("SPD", xp: engine.todayXP.speed, color: AeroColors.speedBlue)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .aeroCard()
     }
 
     private func progressRow(_ label: String, value: String, icon: String) -> some View {
         HStack {
             Image(systemName: icon)
                 .frame(width: 24)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AeroColors.secondaryText)
             Text(label)
+                .foregroundStyle(AeroColors.primaryText)
             Spacer()
             Text(value)
                 .bold()
+                .foregroundStyle(AeroColors.primaryText)
         }
     }
 
@@ -119,7 +126,7 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
-        .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
         .foregroundStyle(color)
     }
 }

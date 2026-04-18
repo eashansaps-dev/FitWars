@@ -11,6 +11,7 @@ struct FitWarsApp: App {
 
     init() {
         FirebaseApp.configure()
+        AeroTabBarAppearance.configure()
     }
 
     var body: some Scene {
@@ -81,7 +82,7 @@ struct MainTabView: View {
                 ProfileView(stats: engine.stats)
             }
         }
-        .tint(.orange)
+        .tint(AeroColors.aqua)
         .task {
             await healthKit.requestAuthorization()
             engine.calculate(from: healthKit.todayActivity)

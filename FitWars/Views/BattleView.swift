@@ -2,7 +2,6 @@ import SwiftUI
 
 struct BattleView: View {
     let playerStats: PlayerStats
-    // Task 10.2: Inject FirestoreService from environment
     @Environment(FirestoreService.self) private var firestoreService
     @State private var opponent: Opponent?
     @State private var result: BattleResult?
@@ -56,9 +55,11 @@ struct BattleView: View {
     private var findingOpponent: some View {
         VStack(spacing: 16) {
             ProgressView().scaleEffect(1.5)
-            Text("Finding opponent...").foregroundStyle(.secondary)
+            Text("Finding opponent...")
+                .foregroundStyle(AeroColors.secondaryText)
         }
         .frame(maxHeight: .infinity)
+        .aeroBackground()
     }
 
     private func opponentPreview(_ opp: Opponent) -> some View {
@@ -67,24 +68,30 @@ struct BattleView: View {
 
             AvatarRenderer(config: opp.avatarConfig, size: 100)
 
-            Text(opp.username).font(.title.bold())
-            Text("Level \(opp.stats.level)").foregroundStyle(.secondary)
+            Text(opp.username)
+                .font(.title.bold())
+                .foregroundStyle(AeroColors.primaryText)
+            Text("Level \(opp.stats.level)")
+                .foregroundStyle(AeroColors.secondaryText)
 
             HStack(spacing: 16) {
-                miniStat("STR", value: opp.stats.strength, color: .red)
-                miniStat("STA", value: opp.stats.stamina, color: .green)
-                miniStat("SPD", value: opp.stats.speed, color: .blue)
+                miniStat("STR", value: opp.stats.strength, color: AeroColors.strengthRed)
+                miniStat("STA", value: opp.stats.stamina, color: AeroColors.staminaGreen)
+                miniStat("SPD", value: opp.stats.speed, color: AeroColors.speedBlue)
             }
 
             // Difficulty picker
             VStack(spacing: 8) {
-                Text("Difficulty").font(.subheadline).foregroundStyle(.secondary)
+                Text("Difficulty")
+                    .font(.subheadline)
+                    .foregroundStyle(AeroColors.secondaryText)
                 Picker("Difficulty", selection: $selectedDifficulty) {
                     ForEach(DifficultyLevel.allCases, id: \.self) { level in
                         Text(level.rawValue.capitalized).tag(level)
                     }
                 }
                 .pickerStyle(.segmented)
+                .tint(AeroColors.primaryAccent)
                 .padding(.horizontal, 32)
             }
 
@@ -96,12 +103,8 @@ struct BattleView: View {
             } label: {
                 Text("⚔️ FIGHT")
                     .font(.title2.bold())
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(.orange)
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
             }
+            .buttonStyle(AeroButtonStyle())
             .padding(.horizontal)
 
             // Quick resolve option
@@ -109,32 +112,35 @@ struct BattleView: View {
                 quickFight(opp)
             } label: {
                 Text("Quick Resolve")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AeroColors.secondaryText)
             }
 
             Button("Find New Opponent") {
                 opponent = nil
                 Task { await findOpponent() }
             }
-            .foregroundStyle(.secondary)
+            .foregroundStyle(AeroColors.secondaryText)
             .padding(.bottom, 8)
         }
         .padding()
+        .aeroBackground()
     }
 
     private func miniStat(_ label: String, value: Int, color: Color) -> some View {
         VStack(spacing: 4) {
-            Text("\(value)").font(.title3.bold())
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text("\(value)")
+                .font(.title3.bold())
+                .foregroundStyle(AeroColors.primaryText)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(AeroColors.secondaryText)
         }
         .frame(width: 70)
         .padding(.vertical, 8)
-        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        .aeroCard(cornerRadius: 12)
     }
 
     private func findOpponent() async {
-        // Task 10.1: Use FirestoreService instead of MockAPIService
-        // Task 10.3: Bot fallback is already implemented in FirestoreService
         opponent = await firestoreService.fetchRandomOpponent()
     }
 
@@ -149,6 +155,3 @@ struct BattleView: View {
         }
     }
 }
-
-// Preview requires environment objects
-// #Preview { BattleView(playerStats: PlayerStats(strength: 30, stamina: 25, speed: 20, totalXP: 500)) }

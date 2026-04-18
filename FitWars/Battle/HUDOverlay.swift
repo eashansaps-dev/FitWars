@@ -25,7 +25,7 @@ class HealthBarNode: SKNode {
         self.barWidth = width
 
         background = SKShapeNode(rect: CGRect(x: 0, y: 0, width: width, height: 14), cornerRadius: 3)
-        background.fillColor = SKColor(white: 0.15, alpha: 0.8)
+        background.fillColor = AeroSKColors.healthBarBackground
         background.strokeColor = .clear
 
         ghost = SKShapeNode(rect: CGRect(x: 0, y: 0, width: width, height: 14), cornerRadius: 3)
@@ -38,14 +38,20 @@ class HealthBarNode: SKNode {
 
         border = SKShapeNode(rect: CGRect(x: 0, y: 0, width: width, height: 14), cornerRadius: 3)
         border.fillColor = .clear
-        border.strokeColor = SKColor(white: 0.5, alpha: 0.6)
+        border.strokeColor = AeroSKColors.hudGlassBorder
         border.lineWidth = 1
+
+        // Shine overlay — top 30% of bar
+        let shine = SKShapeNode(rect: CGRect(x: 0, y: 14 * 0.7, width: width, height: 14 * 0.3), cornerRadius: 2)
+        shine.fillColor = AeroSKColors.hudShine
+        shine.strokeColor = .clear
 
         super.init()
 
         addChild(background)
         addChild(ghost)
         addChild(fill)
+        addChild(shine)
         addChild(border)
     }
 
@@ -203,7 +209,7 @@ class SpecialMeterNode: SKNode {
         self.barWidth = width
 
         background = SKShapeNode(rect: CGRect(x: 0, y: 0, width: width, height: 8), cornerRadius: 2)
-        background.fillColor = SKColor(white: 0.1, alpha: 0.8)
+        background.fillColor = AeroSKColors.meterBackground
         background.strokeColor = .clear
 
         fill = SKShapeNode(rect: CGRect(x: 0, y: 0, width: 0, height: 8), cornerRadius: 2)
@@ -212,8 +218,13 @@ class SpecialMeterNode: SKNode {
 
         border = SKShapeNode(rect: CGRect(x: 0, y: 0, width: width, height: 8), cornerRadius: 2)
         border.fillColor = .clear
-        border.strokeColor = SKColor(white: 0.4, alpha: 0.5)
+        border.strokeColor = AeroSKColors.hudGlassBorder
         border.lineWidth = 1
+
+        // Shine overlay — top 30% of meter
+        let shine = SKShapeNode(rect: CGRect(x: 0, y: 8 * 0.7, width: width, height: 8 * 0.3), cornerRadius: 1)
+        shine.fillColor = AeroSKColors.hudShine
+        shine.strokeColor = .clear
 
         readyLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         readyLabel.fontSize = 10
@@ -228,6 +239,7 @@ class SpecialMeterNode: SKNode {
 
         addChild(background)
         addChild(fill)
+        addChild(shine)
         addChild(border)
         addChild(readyLabel)
     }
@@ -328,7 +340,7 @@ class HUDOverlay: SKNode {
         let youLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         youLabel.text = "YOU"
         youLabel.fontSize = 10
-        youLabel.fontColor = SKColor(white: 0.8, alpha: 0.8)
+        youLabel.fontColor = AeroSKColors.secondaryLabel
         youLabel.horizontalAlignmentMode = .left
         youLabel.position = CGPoint(x: margin, y: topY + 16)
         addChild(youLabel)
@@ -337,7 +349,7 @@ class HUDOverlay: SKNode {
         let cpuLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         cpuLabel.text = "CPU"
         cpuLabel.fontSize = 10
-        cpuLabel.fontColor = SKColor(white: 0.8, alpha: 0.8)
+        cpuLabel.fontColor = AeroSKColors.secondaryLabel
         cpuLabel.horizontalAlignmentMode = .right
         cpuLabel.position = CGPoint(x: sceneSize.width - margin, y: topY + 16)
         addChild(cpuLabel)
@@ -345,7 +357,7 @@ class HUDOverlay: SKNode {
         // --- Timer (centered top) ---
         timerLabel = SKLabelNode(fontNamed: "Menlo-Bold")
         timerLabel.fontSize = 24
-        timerLabel.fontColor = .white
+        timerLabel.fontColor = AeroSKColors.labelColor
         timerLabel.verticalAlignmentMode = .center
         timerLabel.horizontalAlignmentMode = .center
         timerLabel.position = CGPoint(x: sceneSize.width / 2, y: topY + 7)
@@ -397,7 +409,7 @@ class HUDOverlay: SKNode {
                 timerLabel.run(pulse, withKey: "pulse")
             }
         } else {
-            timerLabel.fontColor = .white
+            timerLabel.fontColor = AeroSKColors.labelColor
         }
 
         lastTimerSeconds = clamped
