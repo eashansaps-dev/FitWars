@@ -36,7 +36,12 @@ struct FitWarsApp: App {
             .environment(authManager)
             .environment(firestoreService)
             .task {
+                // Start auth listener now that Firebase is configured
+                authManager.startListening()
+
                 // Auto-trigger anonymous auth on first launch
+                // Give the listener a moment to check for existing session
+                try? await Task.sleep(for: .milliseconds(500))
                 if case .signedOut = authManager.authState {
                     try? await authManager.signInAnonymously()
                 }

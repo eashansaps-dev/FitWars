@@ -51,10 +51,21 @@ final class AuthManager: NSObject {
         }
     }
 
-    // MARK: - Init (Task 1.3)
+    /// Whether the auth state listener has been attached yet.
+    private var isListening = false
+
+    // MARK: - Init
 
     override init() {
         super.init()
+        // Don't call Auth.auth() here — Firebase may not be configured yet.
+        // Call startListening() after FirebaseApp.configure().
+    }
+
+    /// Attaches the Firebase Auth state listener. Must be called after `FirebaseApp.configure()`.
+    func startListening() {
+        guard !isListening else { return }
+        isListening = true
         stateListenerHandle = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             guard let self else { return }
             self.updateAuthState(from: user)
