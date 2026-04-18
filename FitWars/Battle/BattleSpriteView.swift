@@ -4,6 +4,10 @@ import SpriteKit
 struct BattleSpriteView: View {
     let playerStats: PlayerStats
     let opponentStats: PlayerStats
+    var difficulty: DifficultyLevel = .medium
+    var playerAtlas: String = "fighter_default"
+    var opponentAtlas: String = "fighter_default"
+    var stageID: String = "arena_01"
     let onBattleEnd: (Bool) -> Void
 
     @State private var scene: BattleScene?
@@ -19,7 +23,11 @@ struct BattleSpriteView: View {
                         let s = BattleScene(
                             playerStats: playerStats,
                             opponentStats: opponentStats,
-                            size: geo.size
+                            size: geo.size,
+                            difficulty: difficulty,
+                            playerAtlas: playerAtlas,
+                            opponentAtlas: opponentAtlas,
+                            stageID: stageID
                         )
                         s.scaleMode = .resizeFill
                         s.battleDelegate = Coordinator.shared

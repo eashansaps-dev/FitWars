@@ -6,6 +6,7 @@ struct BattleView: View {
     @State private var result: BattleResult?
     @State private var isFighting = false
     @State private var showRealBattle = false
+    @State private var selectedDifficulty: DifficultyLevel = .medium
     private let api: APIService = MockAPIService()
 
     var body: some View {
@@ -19,11 +20,14 @@ struct BattleView: View {
                 } else if showRealBattle, let opp = opponent {
                     BattleSpriteView(
                         playerStats: playerStats,
-                        opponentStats: opp.stats
+                        opponentStats: opp.stats,
+                        difficulty: selectedDifficulty,
+                        playerAtlas: "fighter_default",
+                        opponentAtlas: "fighter_default",
+                        stageID: "arena_01"
                     ) { playerWon in
                         showRealBattle = false
                         result = BattleEngine.resolve(player: playerStats, opponent: opp)
-                        // Override win/loss with actual fight result
                         result = BattleResult(
                             opponent: opp,
                             playerScore: playerWon ? 1 : 0,
@@ -66,6 +70,18 @@ struct BattleView: View {
                 miniStat("STR", value: opp.stats.strength, color: .red)
                 miniStat("STA", value: opp.stats.stamina, color: .green)
                 miniStat("SPD", value: opp.stats.speed, color: .blue)
+            }
+
+            // Difficulty picker
+            VStack(spacing: 8) {
+                Text("Difficulty").font(.subheadline).foregroundStyle(.secondary)
+                Picker("Difficulty", selection: $selectedDifficulty) {
+                    ForEach(DifficultyLevel.allCases, id: \.self) { level in
+                        Text(level.rawValue.capitalized).tag(level)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, 32)
             }
 
             Spacer()
