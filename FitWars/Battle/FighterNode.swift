@@ -24,10 +24,6 @@ class FighterNode: SKNode {
     private let sprite: SKSpriteNode
     private let animator: SpriteAnimator
 
-    // HP bar overlay (kept as simple SKShapeNodes)
-    private let hpBar = SKShapeNode()
-    private let hpFill = SKShapeNode()
-
     // MARK: - Init
 
     init(stats: PlayerStats, isPlayer: Bool, atlasName: String = "fighter_default") {
@@ -55,7 +51,6 @@ class FighterNode: SKNode {
         super.init()
 
         addChild(sprite)
-        buildHPBar()
 
         // Flip opponent to face player
         if !isPlayer { xScale = -1 }
@@ -66,31 +61,7 @@ class FighterNode: SKNode {
 
     required init?(coder: NSCoder) { fatalError() }
 
-    // MARK: - HP Bar
-
-    private func buildHPBar() {
-        hpBar.path = CGPath(
-            roundedRect: CGRect(x: -25, y: 72, width: 50, height: 6),
-            cornerWidth: 3, cornerHeight: 3, transform: nil
-        )
-        hpBar.fillColor = SKColor.darkGray
-        hpBar.strokeColor = .clear
-        addChild(hpBar)
-
-        updateHPBar()
-        addChild(hpFill)
-    }
-
-    private func updateHPBar() {
-        let pct = CGFloat(max(currentHP, 0)) / CGFloat(maxHP)
-        let w = 48 * pct
-        hpFill.path = CGPath(
-            roundedRect: CGRect(x: -24, y: 72, width: w, height: 6),
-            cornerWidth: 3, cornerHeight: 3, transform: nil
-        )
-        hpFill.fillColor = pct > 0.5 ? .green : pct > 0.25 ? .yellow : .red
-        hpFill.strokeColor = .clear
-    }
+    // MARK: - HP Bar (removed — HUD overlay handles health display)
 
     // MARK: - State Machine
 
@@ -182,7 +153,6 @@ class FighterNode: SKNode {
         let prev = state
         transition(to: .hitStun)
         currentHP = max(currentHP - damage, 0)
-        updateHPBar()
 
         // Flash the sprite red
         let flash = SKAction.sequence([

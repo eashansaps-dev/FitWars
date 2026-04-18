@@ -46,8 +46,10 @@ struct BattleView: View {
                     findingOpponent
                 }
             }
+            .aeroBackground()
             .navigationTitle(showRealBattle ? "" : "Battle")
             .toolbarVisibility(showRealBattle ? .hidden : .automatic, for: .navigationBar)
+            .toolbar(showRealBattle ? .hidden : .visible, for: .tabBar)
             .task { await findOpponent() }
         }
     }
@@ -58,8 +60,7 @@ struct BattleView: View {
             Text("Finding opponent...")
                 .foregroundStyle(AeroColors.secondaryText)
         }
-        .frame(maxHeight: .infinity)
-        .aeroBackground()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func opponentPreview(_ opp: Opponent) -> some View {
@@ -123,7 +124,6 @@ struct BattleView: View {
             .padding(.bottom, 8)
         }
         .padding()
-        .aeroBackground()
     }
 
     private func miniStat(_ label: String, value: Int, color: Color) -> some View {
