@@ -8,6 +8,9 @@ class CameraController {
 
     private let camera: SKCameraNode
     private weak var scene: SKScene?
+    
+    /// Public access to the camera node for attaching HUD elements.
+    var cameraNode: SKCameraNode { camera }
 
     private var targetScale: CGFloat = 1.0
     private var targetPosition: CGPoint = .zero
@@ -29,6 +32,14 @@ class CameraController {
 
     /// Whether a special-zoom sequence is currently playing.
     private var isSpecialZoomActive = false
+    
+    /// When true, camera stays fixed at center — no dynamic framing.
+    private var isFixed = false
+    
+    /// Sets whether the camera should stay fixed (no dynamic zoom/pan).
+    func setFixed(_ fixed: Bool) {
+        isFixed = fixed
+    }
 
     // MARK: - Init
 
@@ -48,6 +59,13 @@ class CameraController {
     ///   - opponentPos: Current position of the opponent fighter.
     ///   - sceneSize: The scene's size (used for distance ratios and clamping).
     func update(playerPos: CGPoint, opponentPos: CGPoint, sceneSize: CGSize) {
+        // Fixed mode — camera stays centered, no zoom
+        if isFixed {
+            camera.position = CGPoint(x: sceneSize.width / 2, y: sceneSize.height / 2)
+            camera.setScale(1.0)
+            return
+        }
+        
         // During a special zoom the camera is driven by the SKAction sequence.
         guard !isSpecialZoomActive else {
             updateShake()

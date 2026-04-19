@@ -36,6 +36,16 @@ struct BattleSpriteView: View {
                     }
             }
         }
+        .onAppear {
+            // Force landscape for battle
+            let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+            windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
+        }
+        .onDisappear {
+            // Restore portrait when leaving battle
+            let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+            windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+        }
     }
 
     class Coordinator: NSObject, BattleSceneDelegate {

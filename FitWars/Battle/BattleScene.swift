@@ -66,8 +66,9 @@ class BattleScene: SKScene {
         parallax = ParallaxBackground(stageID: stageID, sceneSize: size)
         addChild(parallax)
 
-        // 2. Camera controller
+        // 2. Camera — fixed position, no dynamic zoom for now
         cameraController = CameraController(scene: self)
+        cameraController.setFixed(true) // disable dynamic zoom
 
         // 3. Fighters with atlas names
         let floorY = size.height * 0.32 + 70
@@ -82,17 +83,20 @@ class BattleScene: SKScene {
         opponent.setScale(1.2)
         addChild(opponent)
 
-        // 4. Input manager — setup + wire callbacks (Task 12.5)
+        // 4. Input manager — attached to camera so controls stay fixed
         inputManager = InputManager()
         inputManager.zPosition = 1000
-        addChild(inputManager)
+        cameraController.cameraNode.addChild(inputManager)
+        inputManager.position = CGPoint(x: -size.width / 2, y: -size.height / 2)
         inputManager.setup(sceneSize: size)
         wireInputCallbacks()
 
-        // 5. HUD overlay
+        // 5. HUD overlay — attached to camera so it stays fixed on screen
         hud = HUDOverlay()
         hud.zPosition = 900
-        addChild(hud)
+        cameraController.cameraNode.addChild(hud)
+        // HUD needs to be offset since camera is centered at scene midpoint
+        hud.position = CGPoint(x: -size.width / 2, y: -size.height / 2)
         hud.setup(sceneSize: size)
 
         // 6. AI controller
