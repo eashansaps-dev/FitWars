@@ -62,9 +62,19 @@ class BattleScene: SKScene {
         backgroundColor = SKColor(red: 0.15, green: 0.15, blue: 0.2, alpha: 1)
         view.isMultipleTouchEnabled = true
 
-        // 1. Parallax background (or fallback gradient)
-        parallax = ParallaxBackground(stageID: stageID, sceneSize: size)
-        addChild(parallax)
+        // 1. Background — try loading arena image, fall back to gradient
+        if let bgPath = Bundle.main.path(forResource: "arena_bg", ofType: "png"),
+           let bgImage = UIImage(contentsOfFile: bgPath) {
+            let bgTexture = SKTexture(image: bgImage)
+            let bgNode = SKSpriteNode(texture: bgTexture)
+            bgNode.size = size  // stretch to fill scene
+            bgNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+            bgNode.zPosition = -50
+            addChild(bgNode)
+        } else {
+            parallax = ParallaxBackground(stageID: stageID, sceneSize: size)
+            addChild(parallax)
+        }
 
         // 2. Camera — fixed position, no dynamic zoom for now
         cameraController = CameraController(scene: self)
