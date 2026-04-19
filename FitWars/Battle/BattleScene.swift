@@ -246,9 +246,11 @@ class BattleScene: SKScene {
             sceneSize: size
         )
 
-        // 6. Parallax update
-        let cameraX = camera?.position.x ?? (size.width / 2)
-        parallax.update(cameraX: cameraX - size.width / 2)
+        // 6. Parallax update (only if parallax was created)
+        if let parallax {
+            let cameraX = camera?.position.x ?? (size.width / 2)
+            parallax.update(cameraX: cameraX - size.width / 2)
+        }
 
         // 7. VFX updates
         vfx.updateShake(dt: dt)
