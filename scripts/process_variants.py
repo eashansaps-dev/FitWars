@@ -61,17 +61,23 @@ def remove_background(img):
     return Image.fromarray(data)
 
 def process_to_256(img):
-    """Remove bg, trim, fit to 256x256 canvas."""
+    """Resize to 256x256 canvas — skip background removal to preserve character."""
     img = img.convert("RGBA")
-    img = remove_background(img)
+    
+    # Just trim any fully-transparent edges if they exist
     bbox = img.getbbox()
-    if not bbox:
-        return None
-    cropped = img.crop(bbox)
+    if bbox:
+        cropped = img.crop(bbox)
+    else:
+        cropped = img
+    
+    # Fit into 240x240, maintain aspect ratio
     scale = min(240 / cropped.width, 240 / cropped.height)
     new_w = int(cropped.width * scale)
     new_h = int(cropped.height * scale)
     cropped = cropped.resize((new_w, new_h), Image.LANCZOS)
+    
+    # Place on 256x256 canvas, bottom-center
     canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     px = (256 - new_w) // 2
     py = 256 - new_h - 4

@@ -81,32 +81,22 @@ def remove_background(img):
     return result
 
 def process_sprite(input_path, output_name):
-    """Load, remove bg, trim, resize, center on 256x256 canvas."""
+    """Load, resize, center on 256x256 canvas — no background removal."""
     print(f"  Processing {input_path} → {output_name}")
     
     img = Image.open(input_path).convert("RGBA")
-    img = remove_background(img)
     
-    # Trim transparent edges
-    bbox = img.getbbox()
-    if not bbox:
-        print(f"    WARNING: empty after bg removal!")
-        return False
-    
-    cropped = img.crop(bbox)
-    print(f"    Character size: {cropped.width}x{cropped.height}")
-    
-    # Fit into 240x240 maintaining aspect ratio
-    scale = min(240 / cropped.width, 240 / cropped.height)
-    new_w = int(cropped.width * scale)
-    new_h = int(cropped.height * scale)
-    cropped = cropped.resize((new_w, new_h), Image.LANCZOS)
+    # Just resize to fit 240x240, maintain aspect ratio
+    scale = min(240 / img.width, 240 / img.height)
+    new_w = int(img.width * scale)
+    new_h = int(img.height * scale)
+    resized = img.resize((new_w, new_h), Image.LANCZOS)
     
     # Place on 256x256 canvas, bottom-center aligned
     canvas = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     px = (256 - new_w) // 2
     py = 256 - new_h - 4  # 4px from bottom
-    canvas.paste(cropped, (px, py))
+    canvas.paste(resized, (px, py))
     
     canvas.save(os.path.join(OUTPUT_DIR, output_name))
     print(f"    Saved: {output_name} ({new_w}x{new_h})")
