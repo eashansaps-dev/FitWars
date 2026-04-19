@@ -97,17 +97,23 @@ class SpriteAnimator {
         for (animName, names) in frameNames {
             var textures: [SKTexture] = []
             for name in names {
-                // Try loading as UIImage first (works for asset catalog images)
-                if let uiImage = UIImage(named: name) {
+                // Method 1: Try loading from bundle path (Sprites folder)
+                if let path = Bundle.main.path(forResource: name, ofType: "png"),
+                   let uiImage = UIImage(contentsOfFile: path) {
                     textures.append(SKTexture(image: uiImage))
-                } else {
-                    // Try with atlas prefix
-                    let prefixed = "\(atlasName)/\(name)"
-                    let tex = SKTexture(imageNamed: prefixed)
-                    // SKTexture(imageNamed:) never returns nil but may return a placeholder
-                    // Check if it has a reasonable size
-                    if tex.size().width > 1 && tex.size().height > 1 {
+                    print("[SpriteAnimator]   Loaded \(name) from bundle path")
+                }
+                // Method 2: Try UIImage(named:) for asset catalog
+                else if let uiImage = UIImage(named: name) {
+                    textures.append(SKTexture(image: uiImage))
+                    print("[SpriteAnimator]   Loaded \(name) from asset catalog")
+                }
+                // Method 3: Try SKTexture(imageNamed:) directly
+                else {
+                    let tex = SKTexture(imageNamed: name)
+                    if tex.size().width > 10 && tex.size().height > 10 {
                         textures.append(tex)
+                        print("[SpriteAnimator]   Loaded \(name) via SKTexture")
                     }
                 }
             }
@@ -119,9 +125,9 @@ class SpriteAnimator {
         
         if loadedAny {
             print("[SpriteAnimator] Direct loading found \(animations.count) animations: \(animations.keys.sorted())")
-            // Set the first idle frame as the sprite's texture
             if let idleFrames = animations["idle"], let first = idleFrames.first {
                 sprite?.texture = first
+                sprite?.size = CGSize(width: 128, height: 180)
             }
         }
         
