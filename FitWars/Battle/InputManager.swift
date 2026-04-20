@@ -15,17 +15,17 @@ class VirtualJoystick: SKNode {
     private(set) var direction: CGVector = .zero
 
     override init() {
-        // Outer ring
+        // Outer ring — solid dark with bright border
         base = SKShapeNode(circleOfRadius: 50)
-        base.strokeColor = AeroSKColors.hudGlassBorder
-        base.fillColor = AeroSKColors.hudGlassBackground
-        base.lineWidth = 2
+        base.strokeColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.9)
+        base.fillColor = SKColor(red: 0.1, green: 0.15, blue: 0.25, alpha: 0.7)
+        base.lineWidth = 3
 
-        // Inner thumb
+        // Inner thumb — bright and visible
         thumb = SKShapeNode(circleOfRadius: 18)
-        thumb.fillColor = SKColor.white.withAlphaComponent(0.35)
-        thumb.strokeColor = AeroSKColors.hudGlassBorder
-        thumb.lineWidth = 1
+        thumb.fillColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.8)
+        thumb.strokeColor = SKColor.white.withAlphaComponent(0.9)
+        thumb.lineWidth = 2
 
         super.init()
 
@@ -147,18 +147,17 @@ class InputManager: SKNode {
     private func createButton(name: String, label: String, color: SKColor, position: CGPoint, radius: CGFloat) {
         let btn = SKShapeNode(circleOfRadius: radius)
         btn.position = position
-        btn.fillColor = SKColor.white.withAlphaComponent(0.2)
-        btn.strokeColor = SKColor.white.withAlphaComponent(0.5)
-        btn.lineWidth = 1.5
+        btn.fillColor = color.withAlphaComponent(0.7)
+        btn.strokeColor = SKColor.white.withAlphaComponent(0.8)
+        btn.lineWidth = 2.5
         btn.name = name
-        btn.alpha = 0.6
-        btn.glowWidth = 2
+        btn.alpha = 1.0
 
-        // Shine overlay
-        let shine = SKShapeNode(circleOfRadius: radius * 0.7)
-        shine.fillColor = SKColor.white.withAlphaComponent(0.15)
+        // Shine overlay — top highlight
+        let shine = SKShapeNode(circleOfRadius: radius * 0.6)
+        shine.fillColor = SKColor.white.withAlphaComponent(0.2)
         shine.strokeColor = .clear
-        shine.position = CGPoint(x: 0, y: radius * 0.2)
+        shine.position = CGPoint(x: 0, y: radius * 0.25)
         btn.addChild(shine)
 
         let text = SKLabelNode(text: label)
