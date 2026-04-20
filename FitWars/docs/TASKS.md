@@ -2,111 +2,85 @@
 
 ## Phase 1: Foundation ✅ DONE
 
-- [x] Create project spec and design docs
-- [x] Create Xcode project (SwiftUI, iOS 17+)
-- [x] Set up project structure + `AppConfig`
-- [x] Add Firebase SDK via SPM
-- [x] Build HealthKit Manager (permissions, daily queries)
-- [x] Create data models (DailyActivity, PlayerStats, CharacterModel, AvatarConfig)
-- [x] Build Stats Engine (activity → XP conversion with daily caps)
-- [x] Avatar customizer (name, skin, face, eyes, hair, outfit)
-- [x] Dashboard screen (avatar + today's stats + XP breakdown)
-- [x] Profile screen (stats, level, XP progress)
+- [x] Project setup, models, HealthKit, Stats Engine
+- [x] Avatar customizer → simplified to fighter variant picker
+- [x] Dashboard, Profile, Battle screens
 
 ## Phase 2: Battle System Overhaul ✅ DONE
 
-- [x] DifficultyLevel enum (easy/medium/hard) + AIAction enum
-- [x] FighterState expanded (11 states) + AttackType enum
-- [x] SpriteAnimator (atlas loading, frame grouping, fallback textures)
-- [x] Placeholder sprite atlas (fighter_default.spriteatlas)
-- [x] FighterNode refactor (SKSpriteNode + SpriteAnimator, special meter, state machine)
-- [x] InputManager (virtual joystick, action buttons, multi-touch, special move buffer)
-- [x] ComboSystem (hit chains, damage scaling, special meter bonus)
-- [x] AIController (reactive AI, combos, survival mode, pattern tracking)
-- [x] HUDOverlay (gradient health bars, ghost damage, timer, combo counter, special meter)
-- [x] VFXManager (hit sparks, screen shake, special flash, slow-mo KO, adaptive perf)
-- [x] CameraController (dynamic framing, zoom, shake)
-- [x] ParallaxBackground (3-layer scrolling, fallback gradient)
-- [x] SoundManager (event hooks, music, missing-file handling)
-- [x] BattleScene complete rewrite (subsystem orchestrator)
-- [x] BattleSpriteView + BattleView updates (difficulty picker, params)
-- [x] Resource cleanup (willMove(from:))
+- [x] SpriteKit battle scene with subsystem architecture
+- [x] FighterNode with SpriteAnimator + sprite atlas support
+- [x] InputManager (virtual joystick + action buttons)
+- [x] AIController (3 difficulty levels, combos, pattern tracking)
+- [x] ComboSystem, HUDOverlay, VFXManager, CameraController
+- [x] ParallaxBackground, SoundManager hooks
+- [x] Arena background image
 
-## Phase 3: Firebase Auth + Stat Sync 🔜 NEXT
+## Phase 3: Firebase Auth + Stat Sync ✅ DONE
 
-- [ ] Implement Sign in with Apple flow
-- [ ] Anonymous auth fallback for onboarding
-- [ ] Link anonymous → Apple ID upgrade
-- [ ] Create user profile in Firestore on first auth
-- [ ] Sync avatar config to Firestore
-- [ ] Sync player stats (strength/stamina/speed) to Firestore
-- [ ] Server-side stat validation (Cloud Function)
-- [ ] Replace MockAPIService with real Firebase API service
-- [ ] Fetch real opponents from Firestore (instead of hardcoded bots)
-- [ ] Battle result storage in Firestore
+- [x] AuthManager (Sign in with Apple + anonymous)
+- [x] FirestoreService (user profiles, stat sync, battle results)
+- [x] Auth-state-aware app routing
+- [x] SignInView, ProfileView account management
+- [x] Cloud Function for stat validation
 
-## Phase 4: Sprite Art
+## Phase 4: Frutiger Aero Theme ✅ DONE
 
-- [ ] Generate base idle pose (AI tools — see SPRITE_ART_GUIDE.md)
-- [ ] Generate attack, hit, block animation frames
-- [ ] Generate walk forward/backward frames
-- [ ] Generate special attack + knockdown + victory frames
-- [ ] Post-process: remove backgrounds, resize to 512×512, center
-- [ ] Create fighter sprite atlas in Xcode
-- [ ] Generate stage background layers (far/mid/near)
-- [ ] Add sound effects (hit, block, whiff, KO, round start/end)
-- [ ] Add background music track
+- [x] Centralized theme (AeroColors, AeroGradients, AeroButtonStyle, AeroCardModifier)
+- [x] All SwiftUI screens themed
+- [x] SpriteKit HUD + controls themed
+- [x] Tab bar styled (Wii aesthetic)
 
-## Phase 5: Real-Time PvP Multiplayer 📋 PLANNED
+## Phase 5: Sprite Art ✅ DONE (MVP)
 
-- [ ] Set up Firebase Realtime Database
-- [ ] Matchmaking queue (write to RTDB, Cloud Function matches players)
-- [ ] Game session creation (Cloud Function creates games/{gameId})
-- [ ] Client-side match listener (observe games/{gameId} for opponent)
-- [ ] Input relay system (send local inputs to RTDB, receive remote inputs)
-- [ ] Network battle scene (extends BattleScene for PvP mode)
-- [ ] Input synchronization (2-frame buffer for jitter absorption)
-- [ ] Rollback netcode (rewind + resimulate on late inputs)
-- [ ] Disconnection handling (3s timeout → forfeit)
-- [ ] PvP result validation (Cloud Function compares both clients)
-- [ ] Anti-cheat: stat validation before match, input rate limiting
-- [ ] PvP UI: "Find Match" button, waiting screen, connection status
+- [x] Gemini-generated fighter sprites (9 poses)
+- [x] Background removal + 256x256 frame processing
+- [x] 5 character variants (default, female, dark, blonde, redhair)
+- [x] Arena background image
+- [x] Fighter variant picker replacing old shape-based customizer
+- [x] FighterSpriteView for SwiftUI screens
 
-## Phase 6: Social + Leaderboard 📋 PLANNED
+## Phase 6: Real-Time PvP Multiplayer 📋 PLANNED
 
-- [ ] Friends list (add by username)
-- [ ] Challenge a friend flow
+- [ ] Firebase Realtime Database setup
+- [ ] Matchmaking queue + Cloud Function matching
+- [ ] Input relay system (send/receive inputs via RTDB)
+- [ ] Network battle scene
+- [ ] Input synchronization + rollback
+- [ ] Disconnection handling
+- [ ] PvP result validation
+- [ ] PvP UI (Find Match, waiting screen)
+
+## Phase 7: Social + Leaderboard 📋 PLANNED
+
+- [ ] Friends list
+- [ ] Challenge a friend
 - [ ] Global leaderboard (weekly reset)
-- [ ] Leaderboard screen
-- [ ] Rank tiers (Bronze → Diamond)
+- [ ] Rank tiers
 
-## Phase 7: Monetization + Polish 📋 PLANNED
+## Phase 8: Polish 📋 PLANNED
 
-- [ ] Integrate AdMob (rewarded ads: double XP, extra battle)
-- [ ] Remove ads IAP ($4.99)
-- [ ] Daily streak bonus logic
-- [ ] Comeback bonus for inactive users
-- [ ] Loading states, error handling, empty states
+- [ ] Sound effects + background music
+- [ ] More character variants + full animation sets per variant
+- [ ] Loading states, error handling
 - [ ] App icon and launch screen
-
-## Phase 8: Ship 📋 PLANNED
-
-- [ ] TestFlight internal testing
-- [ ] Anti-cheat validation testing
-- [ ] App Store screenshots and metadata
-- [ ] Privacy policy page
-- [ ] App Store submission
-- [ ] Post-launch monitoring setup
+- [ ] TestFlight + App Store submission
 
 ---
 
+## Pending Setup (needs Apple Dev Account)
+
+- [ ] HealthKit entitlement (Signing & Capabilities)
+- [ ] Sign in with Apple entitlement
+- [ ] Enable Firestore API in Google Cloud Console
+- [ ] Enable Anonymous Auth in Firebase Console
+- [ ] Deploy Cloud Function (`functions/index.js`)
+
 ## Decisions Made
 
-- ✅ App name: PulseCombat (configurable via `AppConfig.appName`)
-- ✅ Art style: Semi-realistic 2D (Smash Bros with grounded proportions)
-- ✅ Engine: SpriteKit (staying native — Unity/Unreal rejected)
-- ✅ Avatar: Fully customizable, no gender selection
-- ✅ Battle engine: SpriteKit with full subsystem architecture
-- ✅ AI: 3 difficulty levels with reactive behavior, combos, pattern tracking
-- ✅ PvP approach: Real-time via Firebase RTDB input relay (not async)
-- ✅ Multiplayer networking: Firebase Realtime Database for relay, not GameKit
+- ✅ Engine: SpriteKit (Unity/Unreal rejected)
+- ✅ Theme: Frutiger Aero (Nintendo Wii aesthetic)
+- ✅ Character system: Pre-rendered variants, not dynamic customization
+- ✅ PvP: Real-time via Firebase RTDB input relay
+- ✅ Art: AI-generated (Gemini) with programmatic background removal
+- ✅ Battles: Portrait mode (landscape rejected — layout issues)
