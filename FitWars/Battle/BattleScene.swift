@@ -81,16 +81,16 @@ class BattleScene: SKScene {
         cameraController.setFixed(true) // disable dynamic zoom
 
         // 3. Fighters with atlas names
-        let floorY = size.height * 0.32 + 70
+        let floorY = size.height * 0.35
 
         player = FighterNode(stats: playerStats, isPlayer: true, atlasName: playerAtlas)
-        player.position = CGPoint(x: size.width * 0.25, y: floorY)
-        player.setScale(1.2)
+        player.position = CGPoint(x: size.width * 0.3, y: floorY)
+        player.setScale(0.7)
         addChild(player)
 
         opponent = FighterNode(stats: opponentStats, isPlayer: false, atlasName: opponentAtlas)
-        opponent.position = CGPoint(x: size.width * 0.75, y: floorY)
-        opponent.setScale(1.2)
+        opponent.position = CGPoint(x: size.width * 0.7, y: floorY)
+        opponent.setScale(0.7)
         addChild(opponent)
 
         // 4. Input manager — attached to camera so controls stay fixed

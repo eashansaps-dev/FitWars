@@ -31,7 +31,7 @@ struct BattleSpriteView: View {
                             opponentAtlas: opponentAtlas,
                             stageID: stageID
                         )
-                        s.scaleMode = .aspectFill
+                        s.scaleMode = .resizeFill
                         s.battleDelegate = Coordinator.shared
                         Coordinator.shared.onEnd = onBattleEnd
                         scene = s
