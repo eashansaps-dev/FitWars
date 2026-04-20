@@ -162,6 +162,9 @@ class BattleScene: SKScene {
             self.player.moveHorizontal(direction.dx)
         }
 
+        // Also move player directly from joystick in update loop
+        // as a backup in case onMove doesn't fire
+
         inputManager.onAttack = { [weak self] type in
             guard let self, !self.gameOver else { return }
             self.player.attack(type: type)

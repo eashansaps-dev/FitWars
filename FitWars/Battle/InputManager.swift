@@ -200,6 +200,7 @@ class InputManager: SKNode {
     }
 
     private func routeTouch(_ touch: UITouch, at point: CGPoint, phase: UITouch.Phase) {
+        // point is in InputManager's local space (which starts at 0,0 = bottom-left of scene)
         let isLeftSide = point.x < sceneSize.width * 0.4
 
         if phase == .began {
@@ -208,6 +209,7 @@ class InputManager: SKNode {
                 touchMap[touch] = "joystick"
                 joystick.handleTouch(at: point)
                 recordDirectionalInput(joystick.direction)
+                print("[InputManager] Joystick touch at \(point), dir: \(joystick.direction)")
             } else {
                 // Check buttons
                 if let buttonName = hitTestButton(at: point) {
@@ -278,9 +280,10 @@ class InputManager: SKNode {
 
     /// Called each frame to prune stale buffer entries.
     func update(currentTime: TimeInterval) {
-        // Report joystick direction
-        if joystick.direction != .zero {
-            onMove?(joystick.direction)
+        // Report joystick direction every frame while held
+        let dir = joystick.direction
+        if dir.dx != 0 || dir.dy != 0 {
+            onMove?(dir)
         }
 
         // Prune old entries from input buffer
