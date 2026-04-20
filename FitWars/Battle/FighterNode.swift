@@ -52,8 +52,10 @@ class FighterNode: SKNode {
 
         addChild(sprite)
 
-        // Flip opponent to face player
-        if !isPlayer { xScale = -1 }
+        // Flip opponent sprite to face player
+        if !isPlayer {
+            sprite.xScale = -1
+        }
 
         // Start idle animation
         animator.play("idle", loop: true)

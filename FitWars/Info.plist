@@ -6,6 +6,12 @@
 	<string>PulseCombat uses your workout and activity data to power your in-game fighter stats.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>PulseCombat saves your game progress to HealthKit.</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

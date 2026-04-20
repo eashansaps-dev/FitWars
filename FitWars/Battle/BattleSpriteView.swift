@@ -20,20 +20,37 @@ struct BattleSpriteView: View {
             } else {
                 Color.black.ignoresSafeArea()
                     .onAppear {
+                        // Use the current geometry size (works for both portrait and landscape)
+                        let sceneSize = geo.size
                         let s = BattleScene(
                             playerStats: playerStats,
                             opponentStats: opponentStats,
-                            size: geo.size,
+                            size: sceneSize,
                             difficulty: difficulty,
                             playerAtlas: playerAtlas,
                             opponentAtlas: opponentAtlas,
                             stageID: stageID
                         )
-                        s.scaleMode = .resizeFill
+                        s.scaleMode = .aspectFill
                         s.battleDelegate = Coordinator.shared
                         Coordinator.shared.onEnd = onBattleEnd
                         scene = s
                     }
+            }
+        }
+        .onAppear {
+            // Request landscape for battle
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
+                // Also tell the system to auto-rotate
+                UIViewController.attemptRotationToDeviceOrientation()
+            }
+        }
+        .onDisappear {
+            // Restore portrait when leaving battle
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+                UIViewController.attemptRotationToDeviceOrientation()
             }
         }
     }
