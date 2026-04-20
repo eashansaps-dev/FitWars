@@ -11,6 +11,7 @@ struct BattleSpriteView: View {
     let onBattleEnd: (Bool) -> Void
 
     @State private var scene: BattleScene?
+    @State private var hasRequestedLandscape = false
 
     var body: some View {
         GeometryReader { geo in
@@ -19,40 +20,59 @@ struct BattleSpriteView: View {
                     .ignoresSafeArea()
             } else {
                 Color.black.ignoresSafeArea()
+                    .onChange(of: geo.size) { _, newSize in
+                        // Wait until we get landscape dimensions (width > height)
+                        // or just create after a short delay
+                        if scene == nil && hasRequestedLandscape && newSize.width > 100 {
+                            createScene(size: newSize)
+                        }
+                    }
                     .onAppear {
-                        // Use the current geometry size (works for both portrait and landscape)
-                        let sceneSize = geo.size
-                        let s = BattleScene(
-                            playerStats: playerStats,
-                            opponentStats: opponentStats,
-                            size: sceneSize,
-                            difficulty: difficulty,
-                            playerAtlas: playerAtlas,
-                            opponentAtlas: opponentAtlas,
-                            stageID: stageID
-                        )
-                        s.scaleMode = .resizeFill
-                        s.battleDelegate = Coordinator.shared
-                        Coordinator.shared.onEnd = onBattleEnd
-                        scene = s
+                        // Request landscape
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                            windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
+                        }
+                        hasRequestedLandscape = true
+                        
+                        // Fallback: create scene after delay if onChange doesn't fire
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            if scene == nil {
+                                createScene(size: geo.size)
+                            }
+                        }
                     }
             }
         }
-        .onAppear {
-            // Request landscape for battle
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
-                // Also tell the system to auto-rotate
-                UIViewController.attemptRotationToDeviceOrientation()
-            }
-        }
         .onDisappear {
-            // Restore portrait when leaving battle
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
                 windowScene.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
-                UIViewController.attemptRotationToDeviceOrientation()
             }
         }
+    }
+
+    private func createScene(size: CGSize) {
+        // Ensure we use landscape-oriented dimensions
+        let sceneSize: CGSize
+        if size.width > size.height {
+            sceneSize = size
+        } else {
+            // Still in portrait — swap dimensions
+            sceneSize = CGSize(width: size.height, height: size.width)
+        }
+        
+        let s = BattleScene(
+            playerStats: playerStats,
+            opponentStats: opponentStats,
+            size: sceneSize,
+            difficulty: difficulty,
+            playerAtlas: playerAtlas,
+            opponentAtlas: opponentAtlas,
+            stageID: stageID
+        )
+        s.scaleMode = .resizeFill
+        s.battleDelegate = Coordinator.shared
+        Coordinator.shared.onEnd = onBattleEnd
+        scene = s
     }
 
     class Coordinator: NSObject, BattleSceneDelegate {
