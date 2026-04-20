@@ -174,14 +174,23 @@ class FighterNode: SKNode {
     }
 
     func moveHorizontal(_ dx: CGFloat) {
-        guard state == .idle || state == .blocking else { return }
+        guard state == .idle || state == .blocking || state == .walkForward || state == .walkBackward else { return }
         let speed = 4.0 + Double(stats.speed) * 0.06
         position.x += dx * CGFloat(speed)
 
-        // Play walk animation while moving (only when idle)
-        if state == .idle {
+        // Play walk animation while moving
+        if state == .idle || state == .walkForward || state == .walkBackward {
             let walkState: FighterState = dx > 0 ? .walkForward : .walkBackward
-            transition(to: walkState)
+            if state != walkState {
+                transition(to: walkState)
+            }
+        }
+    }
+    
+    /// Called when joystick is released — return to idle if walking.
+    func stopMoving() {
+        if state == .walkForward || state == .walkBackward {
+            transition(to: .idle)
         }
     }
 

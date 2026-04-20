@@ -162,6 +162,11 @@ class BattleScene: SKScene {
             self.player.moveHorizontal(direction.dx)
         }
 
+        inputManager.onMoveEnd = { [weak self] in
+            guard let self else { return }
+            self.player.stopMoving()
+        }
+
         // Also move player directly from joystick in update loop
         // as a backup in case onMove doesn't fire
 
@@ -431,7 +436,8 @@ class BattleScene: SKScene {
         guard !gameOver else { return }
         gameOver = true
 
-        let playerWon = player.currentHP > opponent.currentHP
+        // If HP is equal, it's a draw — give it to the player
+        let playerWon = player.currentHP >= opponent.currentHP
         sound.roundEnd()
 
         if playerWon {

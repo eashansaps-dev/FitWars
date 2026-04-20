@@ -76,6 +76,8 @@ class InputManager: SKNode {
 
     /// Fires each frame with the current normalized joystick direction.
     var onMove: ((CGVector) -> Void)?
+    /// Fires when the joystick is released.
+    var onMoveEnd: (() -> Void)?
     /// Fires when an attack button is tapped.
     var onAttack: ((AttackType) -> Void)?
     /// Fires when the block button is tapped.
@@ -209,7 +211,6 @@ class InputManager: SKNode {
                 touchMap[touch] = "joystick"
                 joystick.handleTouch(at: point)
                 recordDirectionalInput(joystick.direction)
-                print("[InputManager] Joystick touch at \(point), dir: \(joystick.direction)")
             } else {
                 // Check buttons
                 if let buttonName = hitTestButton(at: point) {
@@ -232,6 +233,7 @@ class InputManager: SKNode {
     private func releaseTouch(_ touch: UITouch) {
         if let tracked = touchMap[touch], tracked == "joystick" {
             joystick.handleRelease()
+            onMoveEnd?()
         }
         touchMap.removeValue(forKey: touch)
     }
