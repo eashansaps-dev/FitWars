@@ -175,20 +175,13 @@ class FighterNode: SKNode {
 
     func moveHorizontal(_ dx: CGFloat) {
         guard state == .idle || state == .blocking else { return }
-        let speed = 2.0 + Double(stats.speed) * 0.03
+        let speed = 4.0 + Double(stats.speed) * 0.06
         position.x += dx * CGFloat(speed)
 
         // Play walk animation while moving (only when idle)
         if state == .idle {
             let walkState: FighterState = dx > 0 ? .walkForward : .walkBackward
-            // Flip walk direction for opponent
-            let resolvedState: FighterState
-            if isPlayer {
-                resolvedState = walkState
-            } else {
-                resolvedState = dx > 0 ? .walkBackward : .walkForward
-            }
-            transition(to: resolvedState)
+            transition(to: walkState)
         }
     }
 
