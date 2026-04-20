@@ -30,7 +30,7 @@ struct DashboardView: View {
 
     private var characterCard: some View {
         VStack(spacing: 12) {
-            AvatarRenderer(config: avatar, size: 100)
+            FighterSpriteView(variant: avatar.selectedVariant, size: 120)
 
             if !avatar.name.isEmpty {
                 Text(avatar.name)

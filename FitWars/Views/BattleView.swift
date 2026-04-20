@@ -67,7 +67,7 @@ struct BattleView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            AvatarRenderer(config: opp.avatarConfig, size: 100)
+            FighterSpriteView(variant: opp.avatarConfig.selectedVariant, size: 120)
 
             Text(opp.username)
                 .font(.title.bold())

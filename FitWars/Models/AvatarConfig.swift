@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AvatarConfig: Codable, Equatable {
     var name: String = ""
+    var selectedVariant: FighterVariant = .defaultMale
     var skinTone: CodableColor = CodableColor(.brown)
     var faceShape: FaceShape = .oval
     var eyeStyle: EyeStyle = .normal

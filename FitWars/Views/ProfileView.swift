@@ -15,7 +15,7 @@ struct ProfileView: View {
                     HStack {
                         Spacer()
                         VStack(spacing: 8) {
-                            AvatarRenderer(config: avatar, size: 100)
+                            FighterSpriteView(variant: avatar.selectedVariant, size: 120)
                             if !avatar.name.isEmpty {
                                 Text(avatar.name)
                                     .font(.headline)

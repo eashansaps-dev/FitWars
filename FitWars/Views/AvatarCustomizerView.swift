@@ -7,23 +7,26 @@ struct AvatarCustomizerView: View {
     @State private var config = AvatarConfig()
     @State private var step = 0
 
-    private let steps = ["Name", "Skin", "Face", "Eyes", "Hair", "Outfit"]
+    private let steps = ["Name", "Fighter"]
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             Text(AppConfig.appName)
                 .font(.title2.bold())
                 .foregroundStyle(AeroColors.primaryText)
 
             // Live preview
-            AvatarRenderer(config: config, size: 150)
-                .animation(.easeInOut(duration: 0.2), value: config)
+            FighterSpriteView(variant: config.selectedVariant, size: 160)
 
             if !config.name.isEmpty {
                 Text(config.name)
-                    .font(.headline)
+                    .font(.title3.bold())
                     .foregroundStyle(AeroColors.primaryText)
             }
+
+            Text(config.selectedVariant.displayName)
+                .font(.subheadline)
+                .foregroundStyle(AeroColors.secondaryText)
 
             // Step indicator
             HStack(spacing: 8) {
@@ -34,23 +37,14 @@ struct AvatarCustomizerView: View {
                 }
             }
 
-            Text(steps[step])
-                .font(.headline)
-                .foregroundStyle(AeroColors.secondaryText)
-
             // Step content
             Group {
                 switch step {
                 case 0: nameStep
-                case 1: skinStep
-                case 2: faceStep
-                case 3: eyeStep
-                case 4: hairStep
-                case 5: outfitStep
+                case 1: fighterPickerStep
                 default: EmptyView()
                 }
             }
-            .frame(maxHeight: 160)
 
             Spacer()
 
@@ -105,124 +99,53 @@ struct AvatarCustomizerView: View {
     // MARK: - Steps
 
     private var nameStep: some View {
-        TextField("Fighter Name", text: $config.name)
-            .font(.title3)
-            .textFieldStyle(.roundedBorder)
-            .padding(.horizontal)
-    }
-
-    private var skinStep: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
-            ForEach(AvatarConfig.skinTones, id: \.red) { tone in
-                Circle()
-                    .fill(tone.color)
-                    .frame(width: 44, height: 44)
-                    .overlay(
-                        Circle().stroke(AeroColors.primaryAccent, lineWidth: config.skinTone == tone ? 3 : 0)
-                    )
-                    .onTapGesture { config.skinTone = tone }
-            }
-        }
-        .padding(.horizontal)
-    }
-
-    private var faceStep: some View {
-        HStack(spacing: 16) {
-            ForEach(AvatarConfig.FaceShape.allCases, id: \.self) { shape in
-                VStack(spacing: 6) {
-                    Image(systemName: shape.icon)
-                        .font(.title)
-                        .frame(width: 50, height: 50)
-                        .background(config.faceShape == shape ? AeroColors.skyBlue.opacity(0.15) : .gray.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    Text(shape.rawValue.capitalized)
-                        .font(.caption)
-                }
-                .foregroundStyle(config.faceShape == shape ? AeroColors.primaryAccent : AeroColors.secondaryText)
-                .onTapGesture { config.faceShape = shape }
-            }
-        }
-    }
-
-    private var eyeStep: some View {
-        HStack(spacing: 16) {
-            ForEach(AvatarConfig.EyeStyle.allCases, id: \.self) { style in
-                VStack(spacing: 6) {
-                    Image(systemName: "eye")
-                        .font(.title)
-                        .frame(width: 50, height: 50)
-                        .background(config.eyeStyle == style ? AeroColors.skyBlue.opacity(0.15) : .gray.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    Text(style.label)
-                        .font(.caption)
-                }
-                .foregroundStyle(config.eyeStyle == style ? AeroColors.primaryAccent : AeroColors.secondaryText)
-                .onTapGesture { config.eyeStyle = style }
-            }
-        }
-    }
-
-    private var hairStep: some View {
         VStack(spacing: 12) {
+            Text("Choose your fighter name")
+                .font(.headline)
+                .foregroundStyle(AeroColors.secondaryText)
+            TextField("Fighter Name", text: $config.name)
+                .font(.title3)
+                .textFieldStyle(.roundedBorder)
+                .padding(.horizontal, 32)
+        }
+    }
+
+    private var fighterPickerStep: some View {
+        VStack(spacing: 12) {
+            Text("Choose your fighter")
+                .font(.headline)
+                .foregroundStyle(AeroColors.secondaryText)
+
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(AvatarConfig.HairStyle.allCases, id: \.self) { style in
-                        Text(style.label)
-                            .font(.subheadline)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(config.hairStyle == style ? AeroColors.primaryAccent : .gray.opacity(0.15))
-                            .foregroundStyle(config.hairStyle == style ? .white : AeroColors.primaryText)
-                            .clipShape(Capsule())
-                            .onTapGesture { config.hairStyle = style }
+                HStack(spacing: 16) {
+                    ForEach(FighterVariant.allCases) { variant in
+                        VStack(spacing: 8) {
+                            FighterSpriteView(variant: variant, size: 80)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(
+                                            config.selectedVariant == variant
+                                                ? AeroColors.primaryAccent
+                                                : Color.clear,
+                                            lineWidth: 3
+                                        )
+                                )
+
+                            Text(variant.displayName)
+                                .font(.caption)
+                                .foregroundStyle(
+                                    config.selectedVariant == variant
+                                        ? AeroColors.primaryAccent
+                                        : AeroColors.secondaryText
+                                )
+                        }
+                        .onTapGesture {
+                            config.selectedVariant = variant
+                        }
                     }
                 }
                 .padding(.horizontal)
             }
-
-            if config.hairStyle != .bald {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 8) {
-                    ForEach(AvatarConfig.hairColors, id: \.red) { color in
-                        Circle()
-                            .fill(color.color)
-                            .frame(width: 32, height: 32)
-                            .overlay(
-                                Circle().stroke(AeroColors.primaryAccent, lineWidth: config.hairColor == color ? 3 : 0)
-                            )
-                            .onTapGesture { config.hairColor = color }
-                    }
-                }
-                .padding(.horizontal)
-            }
-        }
-    }
-
-    private var outfitStep: some View {
-        HStack(spacing: 16) {
-            ForEach(AvatarConfig.Outfit.allCases, id: \.self) { outfit in
-                VStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(outfitColor(outfit))
-                        .frame(width: 50, height: 50)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(AeroColors.primaryAccent, lineWidth: config.outfit == outfit ? 3 : 0)
-                        )
-                    Text(outfit.label)
-                        .font(.caption)
-                }
-                .foregroundStyle(config.outfit == outfit ? AeroColors.primaryAccent : AeroColors.secondaryText)
-                .onTapGesture { config.outfit = outfit }
-            }
-        }
-    }
-
-    private func outfitColor(_ outfit: AvatarConfig.Outfit) -> Color {
-        switch outfit {
-        case .gi: .white
-        case .tankTop: .gray
-        case .hoodie: .indigo
-        case .armor: AeroColors.primaryAccent
         }
     }
 }
